@@ -19,16 +19,16 @@ public class MainActivity extends AppCompatActivity {
     final String matListKey = "matListKey";
     final String locSelectCodeKey = "locSelectCodeKey";
 
-    float[] mineCount = {0.5f, 0.2f, 0.1f};
+    final float[] mineCount = {0.5f, 0.2f, 0.1f};
     float[] matMineAmount = new float[mineCount.length];
     int locSelectCode = 0;
-    int locResId[] = {
+    final int locResId[] = {
             R.drawable.loc_wood,
             R.drawable.loc_stone,
             R.drawable.loc_gold
     };
 
-    int matResId[] = {
+    final int matResId[] = {
             R.drawable.wood,
             R.drawable.stone,
             R.drawable.gold
@@ -82,29 +82,52 @@ public class MainActivity extends AppCompatActivity {
                 (ImageView) findViewById(R.id.ivCombine5),
         };
 
+        for (int i = 0; i < ivCombine.length; i++){
+            final int idx = i;
+            ivCombine[i].setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    removeCombine(idx);
+                }
+            });
+        }
+
         //
         ivMat = new ImageView[]{
                 (ImageView) findViewById(R.id.ivMaterial1),
                 (ImageView) findViewById(R.id.ivMaterial2),
                 (ImageView) findViewById(R.id.ivMaterial3),
         };
+        //
         tvMat = new TextView[]{
                 (TextView) findViewById(R.id.tvMaterial1),
                 (TextView) findViewById(R.id.tvMaterial2),
                 (TextView) findViewById(R.id.tvMaterial3),
         };
+
+        for (int i = 0; i < tvMat.length; i++) {
+            final int idx = i;
+            View.OnClickListener lst = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    addCombine(idx);
+                }
+            };
+            ivMat[i].setOnClickListener(lst);
+            tvMat[i].setOnClickListener(lst);
+        }
         //
         btnGo = (Button) findViewById(R.id.btnGo);
-
+        //
         String getMatListValue = getSharedPreferences(saveFileName, MODE_PRIVATE).getString(matListKey, "0,0,0");
         Log.d("d", "getMatListValue : " + getMatListValue);
         String matList[] = getMatListValue.split(",");
-
+        //
         for (int i = 0; i < matResId.length; i++)
             matMineAmount[i] = Float.parseFloat(matList[i]);
-
+        //
         locSelectCode = getSharedPreferences(saveFileName, MODE_PRIVATE).getInt(locSelectCodeKey, 0);
-        ivMineObj.setImageResource(matResId[locSelectCode]);
+        ivMineObj.setImageResource(locResId[locSelectCode]);
 
         printStat();
 
@@ -134,6 +157,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        if (matMineAmount[itemId] < 1) {
+            Toast.makeText(this, "수량 부족", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        matMineAmount[itemId]--;
         combineResId.add(itemId);
 
         for (int i = 0; i < ivCombine.length; i++)
@@ -143,6 +172,26 @@ public class MainActivity extends AppCompatActivity {
             ivCombine[i].setImageResource(matResId[combineResId.get(i)]);
         }
 
+        printStat();
+    }
+
+    public void removeCombine(int idx) {
+        int combineSize = combineResId.size();
+        if (combineSize <= 0 || combineSize <= idx) {
+            Toast.makeText(this, "없음", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        matMineAmount[combineResId.get(idx)]++;
+        combineResId.remove(idx);
+
+        for (int i = 0; i < ivCombine.length; i++)
+            ivCombine[i].setImageResource(0);
+
+        for (int i = 0; i < combineResId.size(); i++) {
+            ivCombine[i].setImageResource(matResId[combineResId.get(i)]);
+        }
+        printStat();
     }
 
     public void printStat() {
