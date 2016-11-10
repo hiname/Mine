@@ -1,189 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootFl"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    >
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:id="@+id/rootFl"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent" >
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#000"
-        android:padding="16dp"
-        >
+        android:padding="16dp" >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical" >
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="0.1"
                 android:gravity="center"
-                android:orientation="horizontal"
-                >
+                android:orientation="horizontal" >
 
-                <TextView
-                    android:id="@+id/tvStat"
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.8"
-                    android:text="loading"
-                    android:textAlignment="center"
-                    android:textColor="#fff"
-                    android:textSize="16sp"/>
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.7"
+                    android:gravity="center"
+                    android:orientation="vertical" >
+
+                    <TextView
+                        android:id="@+id/tvIdleMsg"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="0.5"
+                        android:gravity="center"
+                        android:text="loading"
+                        android:textColor="#fff"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:id="@+id/tvMyMoney"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="0.5"
+                        android:gravity="center"
+                        android:text="loading"
+                        android:textColor="#fff"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/btnInven"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.2"
-                    android:text="inven"/>
+                    android:layout_weight="0.3"
+                    android:text="inven" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="0.2"
-                android:paddingLeft="50dp"
-                android:paddingRight="50dp">
+                android:gravity="center"
+                >
+                <FrameLayout
+                    android:layout_width="200dp"
+                    android:layout_height="match_parent">
 
                 <ImageView
                     android:id="@+id/ivMineObj"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:src="@drawable/loc_wood"/>
+                    android:src="@drawable/loc_wood"
+                    android:layout_gravity="left"/>
 
                 <ImageView
                     android:id="@+id/ivMineWorker"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:paddingTop="40dp"
                     android:src="@drawable/mineworker"
-                    />
+                    android:layout_gravity="right"/>
+
+                </FrameLayout>
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.05"
-                />
+                android:layout_weight="0.05" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="0.15"
-                android:gravity="center">
+                android:gravity="center" >
 
                 <ImageView
                     android:id="@+id/ivLoc1"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:src="@drawable/loc_wood"/>
+                    android:src="@drawable/loc_wood" />
 
                 <ImageView
                     android:id="@+id/ivLoc2"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:src="@drawable/loc_stone"/>
+                    android:src="@drawable/loc_stone" />
 
                 <ImageView
                     android:id="@+id/ivLoc3"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:src="@drawable/loc_gold"/>
+                    android:src="@drawable/loc_gold" />
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.02"
-                />
+                android:layout_weight="0.02" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.1"
-                >
+                android:layout_weight="0.1" >
 
                 <ImageView
                     android:id="@+id/ivCombine1"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/border"/>
+                    android:background="@drawable/border" />
 
                 <ImageView
                     android:id="@+id/ivCombine2"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/border"/>
+                    android:background="@drawable/border" />
 
                 <ImageView
                     android:id="@+id/ivCombine3"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/border"/>
+                    android:background="@drawable/border" />
 
                 <ImageView
                     android:id="@+id/ivCombine4"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/border"/>
+                    android:background="@drawable/border" />
 
                 <ImageView
                     android:id="@+id/ivCombine5"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/border"/>
+                    android:background="@drawable/border" />
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.05"
-                />
+                android:layout_weight="0.05" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="0.12"
-                android:gravity="center">
+                android:gravity="center" >
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical" >
 
                     <ImageView
                         android:id="@+id/ivMaterial1"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.65"
-                        android:src="@drawable/wood"/>
+                        android:src="@drawable/wood" />
 
                     <TextView
                         android:id="@+id/tvMaterial1"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.35"
+                        android:gravity="center"
                         android:text="00"
-                        android:textAlignment="center"
-                        android:textColor="#fff"/>
+                        android:textColor="#fff" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -191,23 +208,23 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical" >
 
                     <ImageView
                         android:id="@+id/ivMaterial2"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.65"
-                        android:src="@drawable/stone"/>
+                        android:src="@drawable/stone" />
 
                     <TextView
                         android:id="@+id/tvMaterial2"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.35"
+                        android:gravity="center"
                         android:text="00"
-                        android:textAlignment="center"
-                        android:textColor="#fff"/>
+                        android:textColor="#fff" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -215,23 +232,23 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical" >
 
                     <ImageView
                         android:id="@+id/ivMaterial3"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.65"
-                        android:src="@drawable/gold"/>
+                        android:src="@drawable/gold" />
 
                     <TextView
                         android:id="@+id/tvMaterial3"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="0.35"
+                        android:gravity="center"
                         android:text="00"
-                        android:textAlignment="center"
-                        android:textColor="#fff"/>
+                        android:textColor="#fff" />
                 </LinearLayout>
 
                 <Button
@@ -239,10 +256,9 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="Mix"/>
+                    android:text="Mix" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-
 
 </FrameLayout>

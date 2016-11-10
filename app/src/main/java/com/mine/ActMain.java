@@ -1,12 +1,12 @@
 package com.mine;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,7 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ActMain extends AppCompatActivity {
+public class ActMain extends Activity {
     final static String mineName[] = {
             "나무",
             "돌",
@@ -37,13 +37,12 @@ public class ActMain extends AppCompatActivity {
     Button btnMix;
     ImageView ivMineObj, ivMineWorker;
     boolean isMineHit = false;
-    TextView tvStat;
+    TextView tvIdleMsg, tvMyMoney;
     int gatherIdx = 0;
     Handler mainAnimHandler = new Handler();
     DataMgr dataMgr;
     Button btnStartInven;
     EffectCanvas effectCanvas;
-
     final static String itemListKey = "itemListKey";
 
     @Override
@@ -51,13 +50,8 @@ public class ActMain extends AppCompatActivity {
         Log.d("d", "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.act_main);
-
-
-
         effectCanvas = new EffectCanvas(this);
-
         ((FrameLayout) findViewById(R.id.rootFl)).addView(effectCanvas);
-
         btnStartInven = (Button) findViewById(R.id.btnInven);
         btnStartInven.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,10 +62,10 @@ public class ActMain extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
         ivMineObj = (ImageView) findViewById(R.id.ivMineObj);
         ivMineWorker = (ImageView) findViewById(R.id.ivMineWorker);
-        tvStat = (TextView) findViewById(R.id.tvStat);
+        tvIdleMsg = (TextView) findViewById(R.id.tvIdleMsg);
+        tvMyMoney = (TextView) findViewById(R.id.tvMyMoney);
         //
         ivLoc = new ImageView[]{
                 (ImageView) findViewById(R.id.ivLoc1),
@@ -104,7 +98,7 @@ public class ActMain extends AppCompatActivity {
                 public void onClick(View v) {
                     dataMgr.removeCombine(idx);
                     updateCombineInven();
-                    printStat();
+                    updateMatCount();
                 }
             });
         }
@@ -127,7 +121,7 @@ public class ActMain extends AppCompatActivity {
                 public void onClick(View v) {
                     dataMgr.addCombine(idx);
                     updateCombineInven();
-                    printStat();
+                    updateMatCount();
                 }
             };
             ivMat[i].setOnClickListener(lst);
@@ -138,10 +132,10 @@ public class ActMain extends AppCompatActivity {
         btnMix.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String mixResultMsg = dataMgr.goMix();
+                String mixResultMsg = dataMgr.tryMix();
                 Toast.makeText(ActMain.this, mixResultMsg, Toast.LENGTH_SHORT).show();
                 updateCombineInven();
-                printStat();
+                updateMatCount();
             }
         });
         //
@@ -150,13 +144,14 @@ public class ActMain extends AppCompatActivity {
         ivMineObj.setImageResource(locResId[dataMgr.getLocSelectCode()]);
         long lastIdleSecTime = dataMgr.getLastIdleSecTime();
         long lastIdleMineCount = dataMgr.getLastIdleMineCount();
-        String lastIdleSecTimeMsg = "방치 : " + lastIdleSecTime + "초";
+        String lastIdleSecTimeMsg = "혼자일함 : " + lastIdleSecTime + "초";
         String lastIdleMineCountMsg = "채집됨 => " + mineName[dataMgr.getLocSelectCode()] + ":" + lastIdleMineCount + "개";
         Toast.makeText(this, lastIdleSecTimeMsg, Toast.LENGTH_LONG).show();
         Toast.makeText(this, lastIdleMineCountMsg, Toast.LENGTH_LONG).show();
-        tvStat.setText(lastIdleSecTimeMsg + ", " + lastIdleMineCountMsg);
+        tvIdleMsg.setText(lastIdleSecTimeMsg + "\n" + lastIdleMineCountMsg);
+        updateMyMoney();
         updateCombineInven();
-        printStat();
+        updateMatCount();
         mainAnimHandler.post(mainAnimRnb);
     }
 
@@ -170,16 +165,17 @@ public class ActMain extends AppCompatActivity {
                 String msg = dataMgr.hitMine();
                 Log.d("d", msg);
                 effectCanvas.addStr(msg);
-                effectCanvas.invalidate();
+                // effectCanvas.invalidate();
             } else {
                 ivMineWorker.setImageResource(R.drawable.mineworker2);
             }
             updateCombineInven();
-            printStat();
-            mainAnimHandler.postDelayed(this, 1000);
+            updateMatCount();
+            mainAnimHandler.postDelayed(this, hitDelay);
             Log.d("d", "play : " + tmpPlayFrameCount++);
         }
     };
+    int hitDelay = 250;
 
     public void updateCombineInven() {
         for (int i = 0; i < ivCombineInven.length; i++) {
@@ -190,10 +186,20 @@ public class ActMain extends AppCompatActivity {
         }
     }
 
-    public void printStat() {
+    public void updateMatCount() {
         // tvStat.setText("wood : " + matAmount[0] + ", stone : " + matAmount[1] + ", gold : " + matAmount[2]);
         for (int i = 0; i < tvMat.length; i++)
             tvMat[i].setText(String.valueOf((int) dataMgr.getMatAmount(i)));
+    }
+
+    public void updateMyMoney() {
+        tvMyMoney.setText("$" + dataMgr.getMyMoney());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateMyMoney();
     }
 
     @Override
