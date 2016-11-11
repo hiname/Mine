@@ -20,6 +20,7 @@ public class EffectCanvas extends View {
     ArrayList<Integer> arrayListY = new ArrayList<Integer>();
     ArrayList<Paint> arrayListPaint = new ArrayList<Paint>();
     boolean isEffecting = false;
+    int hitX = 200;
 
     public void addStr(String str) {
         arrayListStr.add(str);
@@ -47,7 +48,7 @@ public class EffectCanvas extends View {
         for (int i = 0; i < arrayListStr.size(); i++) {
             arrayListY.set(i, arrayListY.get(i) - 3);
             arrayListPaint.get(i).setAlpha(arrayListPaint.get(i).getAlpha() - 16);
-            canvas.drawText(arrayListStr.get(i), 270, arrayListY.get(i), arrayListPaint.get(i));
+            canvas.drawText(arrayListStr.get(i), hitX, arrayListY.get(i), arrayListPaint.get(i));
             if(arrayListPaint.get(i).getAlpha() < 16) {
                 arrayListStr.remove(i);
                 arrayListY.remove(i);
