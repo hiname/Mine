@@ -12,65 +12,82 @@ import java.util.Collections;
  * Created by USER on 2016-11-09.
  */
 public class DataMgr {
+
+    private static SharedPreferences spf;
     static final String saveFileName = "pref";
-    static final String destoryTimeKey = "destoryTimeKey";
-    static final String matAmountDataKey = "matAmountDataKey";
-    static final String locSelectCodeKey = "locSelectCodeKey";
-    static final String combinePackKey = "combinePackKey";
-    static final String myItemPackKey = "myItemPackKey";
-    static final String myMoneyKey = "myMoneyKey";
-    static final String fastSellKey = "fastSellKey";
     //
-    static final String formulaNotFound = "formulaNotFound";
-    static final String myInvenFull = "myInvenFull";
-    static final String myItemAddSuccess = "myItemAddSuccess";
+    private final String destoryTimeKey = "destoryTimeKey";
+    private final String matAmountDataKey = "matAmountDataKey";
+    private final String locSelectCodeKey = "locSelectCodeKey";
+    private final String combinePackKey = "combinePackKey";
+    private final String myItemPackKey = "myItemPackKey";
+    private final String myMoneyKey = "myMoneyKey";
+    private final String fastSellKey = "fastSellKey";
+    private final String fastMixKey = "fastSellKey";
     //
-    private long myMoney = 0;
-    static final float[] mineHitCount = {0.125f, 0.05f, 0.025f};
-    private float[] matAmount = new float[mineHitCount.length];
+    static final String resultCode_formulaNotFound = "resultCode_formulaNotFound";
+    static final String resultCode_myInvenFull = "resultCode_myInvenFull";
+    static final String resultCode_myItemAddOK = "resultCode_myItemAddOK";
+    //
+    //
+    private DataMgr() {}
+
+    private static class Singleton {
+        private static final DataMgr instance = new DataMgr();
+    }
+
+    public static DataMgr getInstance(Context context) {
+        spf = context.getSharedPreferences(saveFileName, Context.MODE_PRIVATE);
+        return Singleton.instance;
+    }
+    //
+    ArrayList<DataUpdate> arrDu = new ArrayList<DataUpdate>();
+
+    public void addUpdateObject(DataUpdate du) {
+        arrDu.add(du);
+    }
+
+    public void updateSystemMsg(String msg) {
+        for (int i = 0; i < arrDu.size(); i++) {
+            DataUpdate du = arrDu.get(i);
+            if (du != null) du.addSystemMsg(msg);
+        }
+    }
+
+    //
+    private final float[] mineFindChance = {0.012f, 0.01f, 0.015f};
+    //
+    private float[] matAmount = new float[mineFindChance.length * 2];
     private int locSelectCode = 0;
-    private int combineInvenSize = 5;
-    private long lastIdleSecTime;
-    private int lastIdleMineCount;
-    private boolean isFastSell = false;
     //
     private ArrayList<Integer> combineInvenItemList = new ArrayList<Integer>();
-    private ArrayList<Integer> myItemList = new ArrayList<Integer>();
-    private static SharedPreferences spf;
-    private int myItemPrice[][] = {
-            {0, 200},
-            {1, 300},
-            {2, 1000},
-            {3, 300},
-            {4, 400},
-            {5, 500},
-            {6, 600},
-            {7, 700},
-            {8, 800},
-    };
+    private int combineInvenSize = 5;
     //
-    private final String mixFormula[][] = {
-            {"00000", "0"},
-            {"11111", "1"},
-            {"22222", "2"},
-            {"00001", "3"}, // stick
-            {"00011", "4"}, // hammer
-            {"00111", "5"}, // maul
-            {"01111", "6"}, // mace
-            {"00012", "7"}, // spear
-            {"00112", "8"}, // morningstar
+    private long lastIdleSecTime;
+    private int lastIdleMineCount;
+    //
+    private boolean isFastSell = false;
+    private boolean isFastMix = false;
+    //
+    private long myMoney;
+    private ArrayList<Integer> myItemList = new ArrayList<Integer>();
+    private ItemInfo itemInfo = ItemInfo.getInstance();
 
-    };
     //
     private int penaltyFactor = 16;
 
     public void setFastSell(boolean isFastSell) {
         this.isFastSell = isFastSell;
     }
+    public void setFastMix(boolean isFastMix) {
+        this.isFastMix = isFastMix;
+    }
 
     public boolean getFastSell() {
         return isFastSell;
     }
+
+    public boolean getFastMix() { return isFastMix; }
 
     public int getMyItemId(int idx) {
         if (myItemList.size() <= idx) return -1;
@@ -88,64 +105,65 @@ public class DataMgr {
     public String tryAddMyItem(int itemId) {
         Log.d("d", "tryAddMyItem");
         if (ActInven.invenSize <= myItemList.size()) {
-            return myInvenFull;
+            return resultCode_myInvenFull;
         }
         myItemList.add(itemId);
-        return myItemAddSuccess;
+        return resultCode_myItemAddOK;
+    }
+
+    private int[] equipId = new int[2];
+
+    public int useMyItem(int idx) {
+        if (idx >= myItemList.size()) return -1;
+        int useItemId = myItemList.remove(idx);
+        // addMyMoney(itemInfo.getPrice(useItemId));
+        // 장비 슬룻으로 이동
+        // 능력치 상승
+        return useItemId;
     }
 
     public int sellMyItem(int idx) {
         if (idx >= myItemList.size()) return -1;
         int sellItemId = myItemList.remove(idx);
-        int itemPriceOrder = -1;
-        for (int i = 0; i < myItemPrice.length; i++) {
-            if (sellItemId == myItemPrice[i][0]) {
-                itemPriceOrder = i;
-                break;
-            }
-        }
-
-        int moneyValue = (itemPriceOrder == -1) ? garbagePrice : myItemPrice[itemPriceOrder][1];
-        addMyMoney(moneyValue);
-        return moneyValue;
+        addMyMoney(itemInfo.getPrice(sellItemId));
+        return sellItemId;
     }
-
-    int garbagePrice = 10;
 
     private void addMyMoney(int money) {
         Log.d("d", "addMyMoney : " + money);
         myMoney += money;
     }
 
-    private DataMgr() {
-    }
-
-    private static class Singleton {
-        private static final DataMgr instance = new DataMgr();
-    }
-
-    public static DataMgr getInstance(Context context) {
-        System.out.println("create instance");
-        spf = context.getSharedPreferences(saveFileName, Context.MODE_PRIVATE);
-        return Singleton.instance;
-    }
+    private final String mixFormula[][] = {
+            {"0,0,0,0,0", "0"},
+            {"1,1,1,1,1", "1"},
+            {"2,2,2,2,2", "2"},
+            {"0,0,0,0,1", "3"}, // stick
+            {"0,0,0,1,1", "4"}, // hammer
+            {"0,0,1,1,1", "5"}, // maul
+            {"0,1,1,1,1", "6"}, // mace
+            {"0,0,0,1,2", "7"}, // spear
+            {"0,0,1,1,2", "8"}, // morningstar
+    };
 
     public String tryMixGetItemName() {
-        String resultItemName = formulaNotFound;
+        String resultItemName = resultCode_formulaNotFound;
         String tmpMixTable = "";
         Collections.sort(combineInvenItemList);
         //
         for (int i = 0; i < combineInvenItemList.size(); i++) {
-            tmpMixTable += combineInvenItemList.get(i);
+            tmpMixTable += combineInvenItemList.get(i) + ",";
         }
+        if (tmpMixTable.length() > 0) tmpMixTable = tmpMixTable.substring(0, tmpMixTable.length() - 1);
         //
         for (int i = 0; i < mixFormula.length; i++) {
             if (tmpMixTable.equals(mixFormula[i][0])) {
                 resultItemName = tryAddMyItem(Integer.parseInt(mixFormula[i][1]));
 
-                if (resultItemName.equals(myItemAddSuccess)) {
-                    resultItemName = ActInven.myItemName[i];
+                if (resultItemName.equals(resultCode_myItemAddOK)) {
+                    resultItemName = itemInfo.getName(i);
                     combineInvenItemList.clear();
+                    break;
                 }
             }
         }
@@ -164,12 +182,22 @@ public class DataMgr {
 
     public String hitMine() {
         String msg = "hit!";
-        int find = (Math.random() < mineHitCount[locSelectCode]) ? 1 : 0;
-        addMatAmount(locSelectCode, find);
-        if (find > 0) msg = ActMain.mineName[locSelectCode] + " + " + find;
-//        if (mineHitCount[locSelectCode] > (matAmount[locSelectCode] - (int)(matAmount[locSelectCode]))){
-//            msg = ActMain.mineName[locSelectCode] + " + 1";
-//        }
+        double chkRnd = Math.random();
+        float chkFindChance = mineFindChance[locSelectCode];
+        int resultSelectCode = locSelectCode;
+        int find = (chkRnd < chkFindChance) ? 1 : 0;
+        if (find > 0) {
+            find = (int)(Math.random() * 3) + 1;
+            if (find >= 2) {
+                chkRnd = Math.random();
+                if (chkRnd < chkFindChance) {
+                    find = 1;
+                    resultSelectCode += 3;
+                }
+            }
+        }
+        addMatAmount(resultSelectCode, find);
+        if (find > 0) msg = MineInfo.mineName[resultSelectCode] + " + " + find;
         return msg;
     }
 
@@ -229,9 +257,55 @@ public class DataMgr {
         return "remove";
     }
 
+    public void saveData() {
+        SharedPreferences.Editor editor = spf.edit();
+        // - - -
+        // isFastSell
+        editor.putBoolean(fastSellKey, isFastSell);
+        // isFastMix
+        editor.putBoolean(fastMixKey, isFastMix);
+        // myMoney
+        editor.putLong(myMoneyKey, myMoney);
+        // locselectCode
+        editor.putInt(locSelectCodeKey, locSelectCode);
+        // destoryTime
+        editor.putLong(destoryTimeKey, System.currentTimeMillis());
+        // combineInvenItemList
+        String combineDataPack = "";
+        if (combineInvenItemList.size() > 0) {
+            for (int combine : combineInvenItemList)
+                combineDataPack += String.valueOf(combine) + ",";
+            combineDataPack = combineDataPack.substring(0, combineDataPack.length() - 1);
+        }
+        editor.putString(combinePackKey, combineDataPack);
+
+        // material
+        String matAmountDataPack = "";
+        for (int i = 0; i < matAmount.length; i++)
+            matAmountDataPack += String.valueOf(matAmount[i]) + ",";
+        matAmountDataPack = matAmountDataPack.substring(0, matAmountDataPack.length() - 1);
+        editor.putString(matAmountDataKey, matAmountDataPack);
+        String myItemPack = "";
+        if (myItemList.size() > 0) {
+            for (int i = 0; i < myItemList.size(); i++)
+                myItemPack += myItemList.get(i) + ",";
+            myItemPack = myItemPack.substring(0, myItemPack.length() - 1);
+        }
+        editor.putString(myItemPackKey, myItemPack);
+        editor.commit();
+        Log.d("d", "save");
+        Log.d("d", "└locSelectCode : " + locSelectCode);
+        Log.d("d", "└combineDataPack : " + combineDataPack);
+        Log.d("d", "└matAmountDataPack : " + matAmountDataPack);
+        Log.d("d", "└myItemPack : " + myItemPack);
+        Log.d("d", "└myItemList.size() : " + myItemList.size());
+    }
+
     public void loadData() {
         // isFastSell
         isFastSell = spf.getBoolean(fastSellKey, isFastSell);
+        // isFastMix
+        isFastMix = spf.getBoolean(fastMixKey, isFastMix);
         // myMoney
         myMoney = spf.getLong(myMoneyKey, 0);
         // locselectCode
@@ -255,7 +329,7 @@ public class DataMgr {
         long nowMillis = System.currentTimeMillis();
         long destroyMillis = spf.getLong(destoryTimeKey, nowMillis);
         lastIdleSecTime = (nowMillis - destroyMillis) / 1000;
-        lastIdleMineCount = (int) (mineHitCount[locSelectCode] * (lastIdleSecTime / penaltyFactor));
+        lastIdleMineCount = (int) (mineFindChance[locSelectCode] * (lastIdleSecTime / penaltyFactor));
         matAmount[locSelectCode] += lastIdleMineCount;
         // myItem
         String myItemPack = spf.getString(myItemPackKey, null);
@@ -272,48 +346,6 @@ public class DataMgr {
         Log.d("d", "└nowMillis : " + nowMillis);
         Log.d("d", "└destroyMillis : " + destroyMillis);
         Log.d("d", "└lastIdleSecTime : " + lastIdleSecTime);
-        Log.d("d", "└myItemPack : " + myItemPack);
-        Log.d("d", "└myItemList.size() : " + myItemList.size());
-    }
-
-    public void saveData() {
-        SharedPreferences.Editor editor = spf.edit();
-        // - - -
-        // isFastSell
-        editor.putBoolean(fastSellKey, isFastSell);
-        // myMoney
-        editor.putLong(myMoneyKey, myMoney);
-        // locselectCode
-        editor.putInt(locSelectCodeKey, locSelectCode);
-        // destoryTime
-        editor.putLong(destoryTimeKey, System.currentTimeMillis());
-        // combineInvenItemList
-        String combineDataPack = "";
-        if (combineInvenItemList.size() > 0) {
-            for (int combine : combineInvenItemList)
-                combineDataPack += String.valueOf(combine) + ",";
-            combineDataPack = combineDataPack.substring(0, combineDataPack.length() - 1);
-        }
-            editor.putString(combinePackKey, combineDataPack);
-
-        // material
-        String matAmountDataPack = "";
-        for (int i = 0; i < matAmount.length; i++)
-            matAmountDataPack += String.valueOf(matAmount[i]) + ",";
-        matAmountDataPack = matAmountDataPack.substring(0, matAmountDataPack.length() - 1);
-        editor.putString(matAmountDataKey, matAmountDataPack);
-        String myItemPack = "";
-        if (myItemList.size() > 0) {
-            for (int i = 0; i < myItemList.size(); i++)
-                myItemPack += myItemList.get(i) + ",";
-            myItemPack = myItemPack.substring(0, myItemPack.length() - 1);
-        }
-        editor.putString(myItemPackKey, myItemPack);
-        editor.commit();
-        Log.d("d", "save");
-        Log.d("d", "└locSelectCode : " + locSelectCode);
-        Log.d("d", "└combineDataPack : " + combineDataPack);
-        Log.d("d", "└matAmountDataPack : " + matAmountDataPack);
         Log.d("d", "└myItemPack : " + myItemPack);
         Log.d("d", "└myItemList.size() : " + myItemList.size());
     }
