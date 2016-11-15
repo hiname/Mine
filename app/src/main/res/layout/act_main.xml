@@ -9,13 +9,14 @@
         android:id="@+id/llbg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/wood_bg"
-        android:padding="16dp">
+        android:background="@drawable/wood_bg">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:background="@drawable/edge"
+            android:orientation="vertical"
+            >
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -27,36 +28,93 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.7"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:layout_weight="0.6"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tvIdleMsg"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="0.5"
-                        android:gravity="center"
-                        android:text="loading"
-                        android:textColor="#fff"
-                        android:textSize="10sp"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.6"
+                        android:background="@drawable/border_wp"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/tvMyMoney"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="0.5"
-                        android:gravity="center"
-                        android:text="loading"
-                        android:textColor="#fff"
-                        android:textSize="16sp"/>
+                        <ImageView
+                            android:id="@+id/ivEquipItem"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="0.7"
+                            android:src="@drawable/wp_slot"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="0.3">
+
+                            <TextView
+                                android:id="@+id/tvEquipItemFindChance"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="0%"
+                                android:textColor="#fff"/>
+
+                            <TextView
+                                android:id="@+id/tvEquipItemDurability"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="0"
+                                android:textColor="#fff"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.6"
+                        android:background="@drawable/border_wp"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivLunchItem"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="0.7"
+                            android:src="@drawable/rice"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="0.3">
+
+                            <TextView
+                                android:id="@+id/tvLunchItemFindChance"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="0%"
+                                android:textColor="#fff"/>
+
+                            <TextView
+                                android:id="@+id/tvLunchItemDurability"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="0"
+                                android:textColor="#fff"/>
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <Button
                     android:id="@+id/btnInven"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.3"
+                    android:layout_weight="0.4"
                     android:text="inven"/>
             </LinearLayout>
 
@@ -80,8 +138,9 @@
                             android:id="@+id/ivMineObj"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:layout_gravity="center"
+                            android:layout_gravity="left"
                             android:layout_weight="1"
+                            android:paddingRight="40dp"
                             android:src="@drawable/loc_wood"/>
 
                         <ImageView
@@ -91,7 +150,7 @@
                             android:layout_gravity="right"
                             android:layout_weight="1"
                             android:paddingRight="10dp"
-                            android:paddingTop="40dp"
+                            android:paddingTop="44dp"
                             android:src="@drawable/mineworker"/>
                     </FrameLayout>
                 </LinearLayout>
@@ -128,37 +187,34 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.05"
-                android:paddingBottom="10dp">
+                android:layout_weight="0.05">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.6"
+                    android:layout_weight="1"
+                    android:gravity="center"
                     android:orientation="horizontal">
 
-                    <ImageView
-                        android:id="@+id/ivEquipItem"
+                    <TextView
+                        android:id="@+id/tvItemStat"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:background="@drawable/border_wp"
-                        android:src="@drawable/wp_slot"/>
+                        android:gravity="center"
+                        android:text="Not Equipment"
+                        android:textColor="#fff"
+                        android:textSize="12sp"/>
 
-                    <ImageView
-                        android:id="@+id/ivLunchItem"
+                    <TextView
+                        android:id="@+id/tvMyMoney"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:background="@drawable/border_wp"
-                        android:src="@drawable/rice"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.4"
-                    android:orientation="horizontal">
+                        android:gravity="center"
+                        android:text="$0"
+                        android:textColor="#fff"
+                        android:textSize="16sp"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -410,7 +466,7 @@
                         android:id="@+id/btnMix"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:text="Mix"/>
+                        android:text="M\nI\nX"/>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

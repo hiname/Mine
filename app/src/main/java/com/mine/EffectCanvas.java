@@ -20,7 +20,7 @@ public class EffectCanvas extends View {
     ArrayList<Integer> arrayListY = new ArrayList<Integer>();
     ArrayList<Paint> arrayListPaint = new ArrayList<Paint>();
     boolean isEffecting = false;
-    int hitX = 200;
+    int hitX = 100;
 
     public void addStr(String str) {
         arrayListStr.add(str);

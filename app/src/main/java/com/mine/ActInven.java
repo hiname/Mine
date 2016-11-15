@@ -112,7 +112,7 @@ public class ActInven extends Activity {
         if (useItemId != -1) {
             String useItemName = itemInfo.getName(useItemId);
             float useItemFindChance = itemInfo.getFindChance(useItemId);
-            String useMsg = useItemName + " 사용. 발견 확률 " + useItemFindChance + " 상승";
+            String useMsg = useItemName + " 사용. 발견 확률 " + (useItemFindChance * 100) + "% 상승";
             Toast.makeText(ActInven.this, useMsg, Toast.LENGTH_SHORT).show();
             dataMgr.updateSystemMsg(useMsg);
         }
@@ -159,9 +159,13 @@ public class ActInven extends Activity {
                                 ivPopupIcon.setImageResource(itemInfo.getResId(getItemId));
                                 btnPopupSell.setText("판매");
                                 btnPopupOpt.setVisibility(View.VISIBLE);
-                                if (itemInfo.getType(getItemId).equals("무기")) {
+                                String type = itemInfo.getType(getItemId);
+                                Log.d("d", "selIdx : " + selIdx);
+                                Log.d("d", "getItemId : " + getItemId);
+                                Log.d("d", "type : " + type);
+                                if (type.equals(ItemInfo.TYPE_WEAPON)) {
                                     btnPopupOpt.setText("장착");
-                                } else if (itemInfo.getType(getItemId).equals("음식")) {
+                                } else if (itemInfo.getType(getItemId).equals(ItemInfo.TYPE_FOOD)) {
                                     btnPopupOpt.setText("먹기");
                                 } else {
                                     btnPopupOpt.setVisibility(View.GONE);
