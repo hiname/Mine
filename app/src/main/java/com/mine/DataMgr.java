@@ -3,10 +3,8 @@ package com.mine;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -21,12 +19,13 @@ public class DataMgr {
     private final String matAmountDataKey = "matAmountDataKey";
     private final String locSelectCodeKey = "locSelectCodeKey";
     private final String combinePackKey = "combinePackKey";
-    private final String myItemPackKey = "myItemPackKey";
+    private final String myModifyPackKey = "myModifyPackKey";
     private final String myMoneyKey = "myMoneyKey";
     private final String fastSellKey = "fastSellKey";
     private final String fastMixKey = "fastMixKey";
     private final String equipItemKey = "equipItemKey";
     private final String lunchItemKey = "lunchItemKey";
+    private final String myItemLastIdxKey = "myItemLastIdxKey";
     //
     static final String resultCode_formulaNotFound = "resultCode_formulaNotFound";
     static final String resultCode_myInvenFull = "resultCode_myInvenFull";
@@ -46,7 +45,7 @@ public class DataMgr {
     //
     DataUpdate dataUpdate;
 
-    public void setUpdateObject(DataUpdate du) {
+    public void setDataUpdate(DataUpdate du) {
         dataUpdate = du;
     }
 
@@ -55,7 +54,7 @@ public class DataMgr {
     }
 
     //
-    private final float[] mineFindChance = {0.007f, 0.003f, 0.005f};
+    private final float[] mineFindChance = {0.7f, 0.3f, 0.5f};
     //
     private float[] matAmount = new float[mineFindChance.length * 2];
     private int locSelectCode = 0;
@@ -69,12 +68,13 @@ public class DataMgr {
     private boolean isFastSell = false;
     private boolean isFastMix = false;
     //
-    private long myMoney;
-    private ArrayList<Integer> myItemList = new ArrayList<Integer>();
+    // private long myMoney;
+    private MyItemList myItemList = MyItemList.getInstance();
+    // private MyItemList myItemList = new MyItemList();
     private ItemInfo itemInfo = ItemInfo.getInstance();
 
     //
-    private int penaltyFactor = 16;
+    private int penaltyFactor = 10;
 
     public void setFastSell(boolean isFastSell) {
         this.isFastSell = isFastSell;
@@ -89,95 +89,68 @@ public class DataMgr {
 
     public boolean getFastMix() { return isFastMix; }
 
-    public int getMyItemId(int idx) {
-        if (myItemList.size() <= idx) return -1;
-        return myItemList.get(idx);
+    private Item equipItem;
+    private Item lunchItem;
+
+    public Item getEquipItem() {
+        return equipItem;
     }
 
-    public long getMyMoney() {
-        return myMoney;
+    public Item getLunchItem() {
+        return lunchItem;
     }
 
-    public String getMyInvenItemPack() {
-        String itemPack = Arrays.toString(myItemList.toArray()).replace("[", "").replace("]", "").replaceAll("\\s", "");
-        Log.d("d", "getMyInvenItemPack : " + itemPack);
-        return itemPack;
-    }
-
-    public String tryAddMyItem(int itemId) {
-        Log.d("d", "tryAddMyItem");
-        if (ActInven.invenSize <= myItemList.size()) {
-            return resultCode_myInvenFull;
-        }
-        Log.d("d", "tryAddMyItem_myItemAdd : " + itemId);
-        myItemList.add(itemId);
-        return resultCode_myItemAddOK;
-    }
-
-    private int equipItemId = -1;
-    private int lunchItemId = -1;
-
-    public int getEquipItemId() {
-        return equipItemId;
-    }
-
-    public int getLunchItemId() {
-        return lunchItemId;
-    }
-
-    public int useMyItem(int idx) {
-        if (idx == -1 || myItemList.size() <= idx) return -1;
-        int useItemId = myItemList.get(idx);
+    public Item useMyItem(Item item) {
+        if (idx == -1 || myItemList.getSize() <= idx) return null;
+        Item useItem = myItemList.getByIdx(idx);
         // addMyMoney(itemInfo.getPrice(useItemId));
-        String type = itemInfo.getType(useItemId);
+        String type = useItem.getType();
         if (type.equals(ItemInfo.TYPE_WEAPON)) {
-            myItemList.remove(idx);
-            dataUpdate.equipItem(useItemId);
-            setEquipItemId(useItemId);
+            myItemList.removeByIdx(idx);
+            dataUpdate.equipItem(useItem);
+            setEquipItem(useItem);
         } else if (type.equals(ItemInfo.TYPE_FOOD)) {
-            myItemList.remove(idx);
-            dataUpdate.lunchItem(useItemId);
-            setLunchItemId(useItemId);
+            myItemList.removeByIdx(idx);
+            dataUpdate.lunchItem(useItem);
+            setLunchItem(useItem);
 
         } else {
             //
         }
-        return useItemId;
+        return useItem;
     }
 
-    private void setLunchItemId(int id) {
-        lunchItemId = id;
+    private void setLunchItem(Item item) {
+        lunchItem = item;
         updateFindChance();
     }
 
-    private void setEquipItemId(int id) {
-        equipItemId = id;
+    private void setEquipItem(Item item) {
+        equipItem = item;
         updateFindChance();
     }
 
-    public String releaseItem(int id) {
-        if (id < 0) return "잘못된 입력";
-        String type = itemInfo.getType(id);
-        if (type.equals(ItemInfo.TYPE_WEAPON)) {
-            setEquipItemId(-1);
-        } else if (type.equals(ItemInfo.TYPE_FOOD)) {
-            setLunchItemId(-1);
+    public String releaseEquipment() {
+        String code = myItemList.tryAddItem(equipItem);
+        if (code.equals(DataMgr.resultCode_myItemAddOK)) {
+            setEquipItem(null);
+            dataUpdate.removeEquipment();
         }
-
-        return "release";
+        return code;
     }
 
-    public int sellMyItem(int idx) {
-        if (idx >= myItemList.size()) return -1;
-        int sellItemId = myItemList.remove(idx);
-        addMyMoney(itemInfo.getPrice(sellItemId));
-        return sellItemId;
+    public String releaseLunch() {
+        String code = myItemList.tryAddItem(lunchItem);
+        if (code.equals(DataMgr.resultCode_myItemAddOK)) {
+            setLunchItem(null);
+            dataUpdate.removeEquipment();
+        }
+        return code;
     }
 
-    private void addMyMoney(int money) {
-        Log.d("d", "addMyMoney : " + money);
-        myMoney += money;
-    }
+    public void removeLunch() {}
+
+    public void removeEquipment() {}
 
     private final String mixFormula[][] = {
             {"0,0,0,0,0", "0"}, // wood
@@ -206,7 +179,8 @@ public class DataMgr {
             // 조합식 발견
             if (tmpMixTable.equals(mixFormula[i][0])) {
 
-                resultItemName = tryAddMyItem(Integer.parseInt(mixFormula[i][1]));
+                Item mixItem = itemInfo.getItem(Integer.parseInt(mixFormula[i][1]));
+                resultItemName = myItemList.tryAddItem(mixItem);
 
                 if (resultItemName.equals(resultCode_myItemAddOK)) {
                     resultItemName = itemInfo.getName(i);
@@ -258,8 +232,8 @@ public class DataMgr {
 
     private void updateFindChance() {
         float mineStandChance = mineFindChance[locSelectCode];
-        float equipFindChance = itemInfo.getFindChance(equipItemId);
-        float lunchFindChance = itemInfo.getFindChance(lunchItemId);
+        float equipFindChance = equipItem.getFindChance();
+        float lunchFindChance = lunchItem.getFindChance();
         //
         findChance = mineStandChance + equipFindChance + lunchFindChance;
         findChance = MathMgr.roundAndDecimal(findChance);
@@ -326,16 +300,16 @@ public class DataMgr {
     public void saveData() {
         SharedPreferences.Editor editor = spf.edit();
         // - - -
-        // equipItemId
-        editor.putInt(equipItemKey, equipItemId);
-        // lunchItemId
-        editor.putInt(lunchItemKey, lunchItemId);
+        // equipItem
+        editor.putString(equipItemKey, equipItem.getModifyPack());
+        // lunchItem
+        editor.putString(lunchItemKey, lunchItem.getModifyPack());
         // isFastSell
         editor.putBoolean(fastSellKey, isFastSell);
         // isFastMix
         editor.putBoolean(fastMixKey, isFastMix);
         // myMoney
-        editor.putLong(myMoneyKey, myMoney);
+        editor.putLong(myMoneyKey, myItemList.getMyMoney());
         // locselectCode
         editor.putInt(locSelectCodeKey, locSelectCode);
         // destoryTime
@@ -355,36 +329,42 @@ public class DataMgr {
             matAmountDataPack += String.valueOf(matAmount[i]) + ",";
         matAmountDataPack = matAmountDataPack.substring(0, matAmountDataPack.length() - 1);
         editor.putString(matAmountDataKey, matAmountDataPack);
-        String myItemPack = "";
-        if (myItemList.size() > 0) {
-            for (int i = 0; i < myItemList.size(); i++)
-                myItemPack += myItemList.get(i) + ",";
-            myItemPack = myItemPack.substring(0, myItemPack.length() - 1);
-        }
-        editor.putString(myItemPackKey, myItemPack);
+        // myItem
+        String modifyPack = myItemList.getModifyPack();
+        editor.putString(myModifyPackKey, modifyPack);
+        // myItemLastIdx
+        editor.putInt(myItemLastIdxKey, myItemList.getMyItemLastIdx());
+
         editor.commit();
         Log.d("d", "save");
         Log.d("d", "└locSelectCode : " + locSelectCode);
         Log.d("d", "└combineDataPack : " + combineDataPack);
         Log.d("d", "└matAmountDataPack : " + matAmountDataPack);
-        Log.d("d", "└myItemPack : " + myItemPack);
-        Log.d("d", "└myItemList.size() : " + myItemList.size());
-        Log.d("d", "└equipItemId : " + equipItemId);
+        Log.d("d", "└modifyPack : " + modifyPack);
+        Log.d("d", "└equipItem : " + equipItem);
 
     }
 
     public void loadData() {
         // - - -
-        // equipItemId
-        useMyItem(spf.getInt(equipItemKey, equipItemId));
-        // lunchItemId
-        lunchItemId = spf.getInt(lunchItemKey, lunchItemId);
+        // equipItem
+		// Item equipItem = itemInfo.getItem();
+		// spf.getString(equipItemKey, null)
+
+		// equipItem
+		Item equipItem = itemInfo.modifyToItem(spf.getString(equipItemKey, null));
+        useMyItem(equipItem);
+
+        // lunchItem
+		Item lunchItem = itemInfo.modifyToItem(spf.getString(lunchItemKey, null));
+		useMyItem(lunchItem);
+
         // isFastSell
         setFastSell(spf.getBoolean(fastSellKey, isFastSell));
         // isFastMix
         setFastMix(spf.getBoolean(fastMixKey, isFastMix));
         // myMoney
-        myMoney = spf.getLong(myMoneyKey, 0);
+        myItemList.setMyMoney(spf.getLong(myMoneyKey, 0));
         // locselectCode
         setLocSelectCode(spf.getInt(locSelectCodeKey, 0));
         // combineInvenItemList
@@ -409,15 +389,12 @@ public class DataMgr {
         lastIdleMineCount = (int) (findChance * (lastIdleSecTime / penaltyFactor));
         matAmount[locSelectCode] += lastIdleMineCount;
         // myItem
-        String myItemPack = spf.getString(myItemPackKey, null);
+        String myModifyPack = spf.getString(myModifyPackKey, null);
         myItemList.clear();
-        if (myItemPack != null)
-            for (String loadItem : myItemPack.split(",")) {
-                if (loadItem != null && loadItem !="") {
-                    Log.d("d", "loadData_myItemAdd : " + loadItem);
-                    myItemList.add(Integer.parseInt(loadItem));
-                }
-            }
+        if (myModifyPack != null && !myModifyPack.equals("")) myItemList.setModifyPackToData(myModifyPack);
+        // myItemLastIdx
+        int myItemLastIdx = spf.getInt(myItemLastIdxKey, myItemList.getMyItemLastIdx());
+        myItemList.setMyItemLastIdx(myItemLastIdx);
         Log.d("d", "load");
         Log.d("d", "└locSelectCode : " + locSelectCode);
         Log.d("d", "└combineDataPack : " + combineDataPack);
@@ -425,8 +402,7 @@ public class DataMgr {
         Log.d("d", "└nowMillis : " + nowMillis);
         Log.d("d", "└destroyMillis : " + destroyMillis);
         Log.d("d", "└lastIdleSecTime : " + lastIdleSecTime);
-        Log.d("d", "└myItemPack : " + myItemPack);
-        Log.d("d", "└myItemList.size() : " + myItemList.size());
-        Log.d("d", "└equipItemId : " + equipItemId);
+        Log.d("d", "└myModifyPack : " + myModifyPack);
+        Log.d("d", "└equipItem : " + equipItem);
     }
 }

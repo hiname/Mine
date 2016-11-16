@@ -22,6 +22,7 @@ import android.widget.Toast;
 public class ActInven extends Activity {
 
     DataMgr dataMgr;
+    MyItemList myItemList = MyItemList.getInstance();
     ItemInfo itemInfo = ItemInfo.getInstance();
     static int invenSize = 9;
     Dialog dlg;
@@ -108,10 +109,13 @@ public class ActInven extends Activity {
     }
 
     public void useItem() {
-        int useItemId = dataMgr.useMyItem(lastSelIdx);
-        if (useItemId != -1) {
-            String useItemName = itemInfo.getName(useItemId);
-            float useItemFindChance = itemInfo.getFindChance(useItemId);
+
+        // int useItemId = dataMgr.useMyItem(lastSelIdx);
+		Item useItem = myItemList.getByIdx(lastSelIdx);
+
+        if (useItem != null) {
+            String useItemName = useItem.getName();
+            float useItemFindChance = useItem.getFindChance();
             String useMsg = useItemName + " 사용. 발견 확률 " + (useItemFindChance * 100) + "% 상승";
             Toast.makeText(ActInven.this, useMsg, Toast.LENGTH_SHORT).show();
             dataMgr.updateSystemMsg(useMsg);
@@ -120,7 +124,7 @@ public class ActInven extends Activity {
     }
 
     public void sellItem() {
-        int sellItemId = dataMgr.sellMyItem(lastSelIdx);
+        int sellItemId = myItemList.sellItem(lastSelIdx);
         if (sellItemId != -1) {
             String sellItemName = itemInfo.getName(sellItemId);
             int sellItemPrice = itemInfo.getPrice(sellItemId);
@@ -150,9 +154,10 @@ public class ActInven extends Activity {
                             if (dataMgr.getFastSell()) {
                                 sellItem();
                             } else {
-                                int getItemId = dataMgr.getMyItemId(selIdx);
-                                if (getItemId == -1) return;
+                                Item getItem = myItemList.getItem(selIdx);
+                                if (getItem == null) return;
 
+								int getItemId = getItem.getId();
                                 tvDlgTitle.setText(itemInfo.getName(getItemId));
                                 // ivPopupIcon.setImageResource(myInvenResId[getItemId]);
                                 // btnPopupSell.setText(myItemName[getItemId] + " 판매");
@@ -185,10 +190,10 @@ public class ActInven extends Activity {
         LinearLayout llInven = (LinearLayout) findViewById(R.id.llInven);
         int itemCnt = 0;
         //
-        // itemList = itemList.replace("[\"\"]", "").replace("]", "").replaceAll(", ", "");
-        String itemList[] = dataMgr.getMyInvenItemPack().split(",");
-        Log.d("d", "Arrays.toString(itemList) : " + Arrays.toString(itemList));
-        if (itemList != null && itemList.length > 0 && itemList[0].length() > 0)
+        // modelList = modelList.replace("[\"\"]", "").replace("]", "").replaceAll(", ", "");
+        String modelList[] = myItemList.getItemModelIdPack().split(",");
+        Log.d("d", "Arrays.toString(modelList) : " + Arrays.toString(modelList));
+        if (modelList != null && modelList.length > 0 && modelList[0].length() > 0)
             loop:
                     for (int i = 0; i < llInven.getChildCount(); i++) {
                         LinearLayout llChild = (LinearLayout) llInven.getChildAt(i);
@@ -196,11 +201,11 @@ public class ActInven extends Activity {
                             Object obj = llChild.getChildAt(j);
                             if (obj instanceof ImageView) {
                                 ImageView ivItem = (ImageView) obj;
-                                int getItemId = Integer.parseInt(itemList[itemCnt]);
-                                Log.d("d", "getItemId : " + getItemId);
-                                ivItem.setImageResource(itemInfo.getResId(getItemId));
+                                int modelId = Integer.parseInt(modelList[itemCnt]);
+                                Log.d("d", "modelId : " + modelId);
+                                ivItem.setImageResource(itemInfo.getResId(modelId));
                                 itemCnt++;
-                                if (itemCnt >= itemList.length)
+                                if (itemCnt >= modelList.length)
                                     break loop;
                             }
                         }

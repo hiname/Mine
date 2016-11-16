@@ -31,13 +31,14 @@ public class ActMain extends Activity implements DataUpdate {
 	int gatherIdx = 0;
 	Handler mainAnimHandler = new Handler();
 	DataMgr dataMgr;
+	MyItemList myItemList = MyItemList.getInstance();
 	Button btnOpenInven;
 	EffectCanvas hitEffectCanvas;
 	ArrayAdapter<String> systemMsgAdapter;
 	ImageView ivEquipItem, ivLunchItem;
 	TextView tvEquipItemDurability, tvLunchItemDurability;
 	TextView tvEquipItemFindChance, tvLunchItemFindChance;
-	ItemInfo itemInfo;
+	// ItemInfo itemInfo = ItemInfo.getInstance();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +49,7 @@ public class ActMain extends Activity implements DataUpdate {
 		ivEquipItem.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				releaseItem(equipItemId);
+				releaseEquipment();
 			}
 		});
 		tvEquipItemDurability = (TextView) findViewById(R.id.tvEquipItemDurability);
@@ -205,7 +206,8 @@ public class ActMain extends Activity implements DataUpdate {
 			}
 		});
 		mainAnimHandler.post(mainAnimRnb);
-		dataMgr.setUpdateObject(this);
+		dataMgr.setDataUpdate(this);
+		myItemList.setDataUpdate(this);
 		CheckBox cbFastMix = (CheckBox) findViewById(R.id.cbFastMix);
 		cbFastMix.setChecked(dataMgr.getFastMix());
 		cbFastMix.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -214,13 +216,13 @@ public class ActMain extends Activity implements DataUpdate {
 				dataMgr.setFastMix(isChecked);
 			}
 		});
-		itemInfo = ItemInfo.getInstance();
+
 		updateMyMoney();
 		updateCombineInven();
 		updateMatCount();
-		Log.d("d", "oncreate_equipItemId : " + equipItemId);
-		equipItem(dataMgr.getEquipItemId());
-		lunchItem(dataMgr.getLunchItemId());
+		Log.d("d", "oncreate_equipItemId : " + equipItem);
+		equipItem(dataMgr.getEquipItem());
+		lunchItem(dataMgr.getLunchItem());
 		updateItemStatMsg();
 	}
 
@@ -289,15 +291,10 @@ public class ActMain extends Activity implements DataUpdate {
 		}
 	}
 
-	public void updateMyMoney() {
-		Log.d("d", "updateMyMoney : " + dataMgr.getMyMoney());
-		tvMyMoney.setText("$" + dataMgr.getMyMoney());
-	}
-
 	@Override
-	protected void onResume() {
-		super.onResume();
-		updateMyMoney();
+	public void updateMyMoney() {
+		Log.d("d", "updateMyMoney : " + myItemList.getMyMoney());
+		tvMyMoney.setText("$" + myItemList.getMyMoney());
 	}
 
 	@Override
@@ -320,78 +317,101 @@ public class ActMain extends Activity implements DataUpdate {
 		systemMsgAdapter.notifyDataSetChanged();
 	}
 
-	private int equipItemId = -1;
-	private int lunchItemId = -1;
+	private Item equipItem = null;
+	private Item lunchItem = null;
 
 	@Override
-	public void equipItem(int id) {
-		if (id == -1) return;
-		if (equipItemId != -1) {
-			releaseItem(equipItemId);
-		}
-		equipItemId = id;
-		ivEquipItem.setImageResource(itemInfo.getResId(id));
-		wpDurability = itemInfo.getDurability(id);
+	public void equipItem(Item item) {
+		if (item == null) return;
+		if (equipItem != null) releaseEquipment();
+
+		equipItem = item;
+		ivEquipItem.setImageResource(equipItem.getResId());
+		wpDurability = equipItem.getDurability();
 		tvEquipItemDurability.setText(String.valueOf(wpDurability));
-		tvEquipItemFindChance.setText(MathMgr.roundAndPercent(itemInfo.getFindChance(id)) + "%");
+		tvEquipItemFindChance.setText(MathMgr.roundAndPercent(equipItem.getFindChance()) + "%");
 		updateItemStatMsg();
 	}
 
 	@Override
-	public void lunchItem(int id) {
-		if (id == -1) return;
-		if (lunchItemId != -1) {
+	public void lunchItem(Item item) {
+		if (item == null) return;
+		if (lunchItem != null) {
 			Toast.makeText(this, "이미 먹는 음식이 있습니다.", Toast.LENGTH_LONG).show();
 			return;
 		}
-		lunchItemId = id;
-		ivLunchItem.setImageResource(itemInfo.getResId(id));
-		foodDurability = itemInfo.getDurability(id);
+		lunchItem = item;
+		ivLunchItem.setImageResource(lunchItem.getResId());
+		foodDurability = lunchItem.getDurability();
 		tvLunchItemDurability.setText(String.valueOf(foodDurability));
-		tvLunchItemFindChance.setText(MathMgr.roundAndPercent(itemInfo.getFindChance(id)) + "%");
+		tvLunchItemFindChance.setText(MathMgr.roundAndPercent(lunchItem.getFindChance()) + "%");
 		updateItemStatMsg();
 	}
 
 	@Override
-	public String releaseItem(int id) {
-		String resultCode = null;
-		if (id != -1) {
-			String type = itemInfo.getType(id);
-			if (type.equals(ItemInfo.TYPE_WEAPON)) {
-				String code = dataMgr.tryAddMyItem(id);
-				if (code.equals(DataMgr.resultCode_myInvenFull)) {
-					Toast.makeText(this, "인벤 가득참", Toast.LENGTH_LONG).show();
-					resultCode = DataMgr.resultCode_myInvenFull;
-				} else if (code.equals(DataMgr.resultCode_myItemAddOK)) {
-					ivEquipItem.setImageResource(R.drawable.wp_slot);
-					addSystemMsg(itemInfo.getName(equipItemId) + " 장착 해제");
-					dataMgr.releaseItem(equipItemId);
-					tvEquipItemFindChance.setText("0%");
-					tvEquipItemDurability.setText("0");
-					wpDurability = 0;
-					equipItemId = -1;
-					resultCode = DataMgr.resultCode_myItemAddOK;
-				}
-			} else if (type.equals(ItemInfo.TYPE_FOOD)) {
-				ivLunchItem.setImageResource(R.drawable.rice);
-				addSystemMsg(itemInfo.getName(lunchItemId) + " 먹기 끝");
-				dataMgr.releaseItem(lunchItemId);
-				tvLunchItemFindChance.setText("0%");
-				tvLunchItemDurability.setText("0");
-				foodDurability = 0;
-				lunchItemId = -1;
-				resultCode = DataMgr.resultCode_myItemAddOK;
-			}
+	public void releaseEquipment() {
+		String resultCode = dataMgr.releaseEquipment();
+		String msg = "";
+		if (resultCode.equals(DataMgr.resultCode_myInvenFull)) {
+			Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+			msg = "인벤 가득참";
+		} else if (resultCode.equals(DataMgr.resultCode_myItemAddOK)) {
+			removeEquipment();
+			msg = "OK";
 		}
+		addSystemMsg(msg);
 		updateItemStatMsg();
-		return resultCode;
+	}
+
+	@Override
+	public void releaseLunch() {
+		String code = myItemList.tryAddItem(lunchItem);
+
+		if (code.equals(DataMgr.resultCode_myInvenFull)) {
+			String msg = "인벤 가득참";
+			Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+			addSystemMsg(msg);
+			updateItemStatMsg();
+		}  else if (code.equals(DataMgr.resultCode_myItemAddOK)) {
+			removeLunch();
+		}
+	}
+
+	@Override
+	public void removeEquipment() {
+		String msg = equipItem.getName() + " 장착 해제";
+
+		ivEquipItem.setImageResource(R.drawable.wp_slot);
+		dataMgr.releaseEquipment();
+		tvEquipItemFindChance.setText("0%");
+		tvEquipItemDurability.setText("0");
+		wpDurability = 0;
+		equipItem = null;
+
+		addSystemMsg(msg);
+		updateItemStatMsg();
+	}
+
+	@Override
+	public void removeLunch() {
+		String msg = lunchItem.getName() + " 먹기 끝";
+
+		ivLunchItem.setImageResource(R.drawable.rice);
+		dataMgr.removeLunch();
+		tvLunchItemFindChance.setText("0%");
+		tvLunchItemDurability.setText("0");
+		foodDurability = 0;
+		lunchItem = null;
+
+		addSystemMsg(msg);
+		updateItemStatMsg();
 	}
 
 	@Override
 	public void updateItemStatMsg() {
 		String itemStat = "총 확률 : " + MathMgr.roundAndPercent(dataMgr.getFindChance()) + "%";
-		if (equipItemId != -1 || lunchItemId != -1) {
-			float sumFindChance = MathMgr.roundAndPercent(itemInfo.getFindChance(equipItemId) + itemInfo.getFindChance(lunchItemId));
+		if (equipItem != null || lunchItem != null) {
+			float sumFindChance = MathMgr.roundAndPercent(equipItem.getFindChance() + lunchItem.getFindChance());
 			itemStat += "\n(아이템:+" + sumFindChance + "%)";
 		}
 		tvItemStat.setText(itemStat);
@@ -404,14 +424,14 @@ public class ActMain extends Activity implements DataUpdate {
 		if (wpDurability > 0) {
 			wpDurability--;
 			tvEquipItemDurability.setText(String.valueOf(wpDurability));
-		} else if (equipItemId != -1) {
-			releaseItem(equipItemId);
+		} else if (equipItem != null) {
+			releaseEquipment();
 		}
 		if (foodDurability > 0) {
 			foodDurability--;
 			tvLunchItemDurability.setText(String.valueOf(foodDurability));
-		} else if (lunchItemId != -1) {
-			releaseItem(lunchItemId);
+		} else if (lunchItem != null) {
+			removeLunch();
 		}
 	}
 }

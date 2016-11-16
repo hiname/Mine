@@ -6,13 +6,18 @@ package com.mine;
 interface DataUpdate {
 	public void addSystemMsg(String msg);
 
-	public void equipItem(int id);
+	public void equipItem(Item item);
 
-	public void lunchItem(int id);
+	public void lunchItem(Item item);
 
-	public String releaseItem(int id);
+	public void releaseEquipment();
+	public void releaseLunch();
+
+	public void removeEquipment();
+	public void removeLunch();
 
 	public void updateItemStatMsg();
+	public void updateMyMoney();
 
 	public void hit();
 }
