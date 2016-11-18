@@ -14,7 +14,7 @@ import java.util.ArrayList;
 /**
  * Created by USER on 2016-11-09.
  */
-public class EffectCanvas extends View {
+public class TextEffectCanvas extends View {
 
     ArrayList<String> arrayListStr = new ArrayList<String>();
     ArrayList<Integer> arrayListY = new ArrayList<Integer>();
@@ -36,7 +36,7 @@ public class EffectCanvas extends View {
         //
     }
 
-    public EffectCanvas(Context context) {
+    public TextEffectCanvas(Context context) {
         super(context);
 
     }

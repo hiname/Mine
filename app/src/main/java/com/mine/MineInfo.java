@@ -17,7 +17,7 @@ public class MineInfo {
     static final int locResId[] = {
             R.drawable.loc_wood,
             R.drawable.loc_stone,
-            R.drawable.loc_hunt,
+            R.drawable.butchershop,
     };
 
     static final int locBgResId[] = {

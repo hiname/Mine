@@ -16,4 +16,5 @@ interface MainUpdate {
 	public void updateMyMoney();
 
 	public void hit();
+	public void updateMatCount();
 }

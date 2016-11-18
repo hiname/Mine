@@ -2,17 +2,24 @@ package com.mine;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
+import android.view.animation.ScaleAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -26,21 +33,22 @@ public class ActMain extends Activity implements MainUpdate {
 	ImageView[] ivLoc, ivCombineInven, ivMat;
 	TextView[] tvMat;
 	Button btnMix;
-	ImageView ivMineObj, ivMineWorker;
-	boolean isMineHit = false;
-	int hitFrame = 0;
+	ImageView ivMineObj, ivMineWorker, ivHitEffect;
+	// boolean isMineHit = false;
+	int hitFrame, hitEffecFrame;
 	TextView tvItemStat, tvMyMoney;
 	int gatherIdx = 0;
 	Handler mainAnimHandler = new Handler();
 	DataMgr dataMgr;
 	MyItemList myItemList = MyItemList.getInstance();
-	Button btnOpenInven;
-	EffectCanvas hitEffectCanvas;
+	ImageButton btnInvenOpen;
+	TextEffectCanvas hitEffectCanvas;
 	ArrayAdapter<String> systemMsgAdapter;
 	ImageView ivEquipItem, ivLunchItem;
 	TextView tvEquipItemDurability, tvLunchItemDurability;
 	TextView tvEquipItemFindChance, tvLunchItemFindChance;
 	// ItemInfo itemInfo = ItemInfo.getInstance();
+	private Rect rectBtnRange;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -68,18 +76,35 @@ public class ActMain extends Activity implements MainUpdate {
 		tvLunchItemDurability = (TextView) findViewById(R.id.tvLunchItemDurability);
 		tvLunchItemFindChance = (TextView) findViewById(R.id.tvLunchItemFindChance);
 		//
-		hitEffectCanvas = new EffectCanvas(this);
+		hitEffectCanvas = new TextEffectCanvas(this);
 		((FrameLayout) findViewById(R.id.rootFl)).addView(hitEffectCanvas);
-		btnOpenInven = (Button) findViewById(R.id.btnInven);
-		btnOpenInven.setOnClickListener(new View.OnClickListener() {
+		btnInvenOpen = (ImageButton) findViewById(R.id.btnInvenOpen);
+		btnInvenOpen.setOnTouchListener(new View.OnTouchListener() {
 			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(ActMain.this, ActInven.class);
-				startActivity(intent);
+			public boolean onTouch(View v, MotionEvent event) {
+				Log.d("d", "event.getAction() : " + event.getAction());
+				switch (event.getAction()) {
+					case MotionEvent.ACTION_DOWN :
+						// btnInvenOpen.setBackgroundResource(R.drawable.btn_bg_down);
+						rectBtnRange = new Rect(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
+						break;
+
+					case MotionEvent.ACTION_UP :
+						// btnInvenOpen.setBackgroundResource(R.drawable.btn_bg);
+						if(rectBtnRange.contains(v.getLeft() + (int) event.getX(), v.getTop() + (int) event.getY())){
+							Intent intent = new Intent(ActMain.this, ActInven.class);
+							startActivity(intent);
+						}
+						break;
+				}
+				return true;
 			}
 		});
+
 		ivMineObj = (ImageView) findViewById(R.id.ivMineObj);
 		ivMineWorker = (ImageView) findViewById(R.id.ivMineWorker);
+		ivHitEffect = (ImageView) findViewById(R.id.ivHitEffect);
+		//
 		tvItemStat = (TextView) findViewById(R.id.tvItemStat);
 		tvMyMoney = (TextView) findViewById(R.id.tvMyMoney);
 		ListView lvSystemMsg = (ListView) findViewById(R.id.lvSystemMsg);
@@ -234,46 +259,152 @@ public class ActMain extends Activity implements MainUpdate {
 		dataMgr.useItem(dataMgr.getLunchItem());
 
 		updateFindChanceMsg();
+		initAnim();
 	}
 
 	boolean isShakeAnim = false;
 	Animation shake;
+//	int[] hitFrameResId = {
+//			R.drawable.mineworker01,
+//			// R.drawable.mineworker02,
+//			R.drawable.mineworker03,
+//			// R.drawable.mineworker04,
+//			R.drawable.mineworker05,
+//			// R.drawable.mineworker06,
+//			R.drawable.mineworker07,
+//			// R.drawable.mineworker08,
+//			R.drawable.mineworker09,
+//			// R.drawable.mineworker10,
+//			R.drawable.mineworker11,
+//			// R.drawable.mineworker12,
+//	};
+
 	int[] hitFrameResId = {
-			R.drawable.mineworker,
-			R.drawable.mineworker1_2,
-			R.drawable.mineworker1_3,
-			R.drawable.mineworker2,
-			R.drawable.mineworker2,
+			R.drawable.mwb0,
+			R.drawable.mwb1,
+			R.drawable.mwb2,
+			R.drawable.mwb3,
+			R.drawable.mwb4,
+			R.drawable.mwb5,
+			R.drawable.mwb6,
+			R.drawable.mwb7,
+			R.drawable.mwb8,
+			R.drawable.mwb9,
+			R.drawable.mwb10,
+			R.drawable.mwb11,
+			R.drawable.mwb12,
+			R.drawable.mwb13,
+			R.drawable.mwb14,
+			R.drawable.mwb15,
+			R.drawable.mwb16,
+			R.drawable.mwb17,
+
+
 	};
+
+
 	int hitFrameLen = hitFrameResId.length;
 	Runnable mainAnimRnb = new Runnable() {
 		@Override
 		public void run() {
-			isMineHit ^= true;
-			hitFrame++;
-			if (hitFrame < (hitFrameLen - 1)) {
-				ivMineWorker.setImageResource(hitFrameResId[hitFrame]);
-			} else {
-				ivMineWorker.setImageResource(hitFrameResId[hitFrame]);
-				hitFrame = 0;
-				String hitMsg = dataMgr.hitMine();
-				hitEffectCanvas.addStr(hitMsg);
-				if (hitMsg.contains("+")) {
-					// ActMain.tvSystemMsg.setText(ActMain.tvSystemMsg.getText().toString() + hitMsg + "\n");
-					systemMsgAdapter.add(hitMsg);
-					systemMsgAdapter.notifyDataSetChanged();
-				}
-				if (!isShakeAnim) {
-					ivMineObj.startAnimation(shake);
-					isShakeAnim = true;
-				}
-			}
-			updateCombineInven();
-			updateMatCount();
+			attackFrame();
+
+			//
 			mainAnimHandler.postDelayed(this, hitDelay);
 		}
 	};
-	int hitDelay = 120;
+
+	public void attackFrame() {
+		hitFrame++;
+		int frameResId = hitFrameResId[hitFrame];
+		if (hitFrame < (hitFrameLen - 1)) {
+			ivMineWorker.setImageResource(frameResId);
+		} else {
+			ivMineWorker.setImageResource(frameResId);
+			hitFrame = 0;
+			String hitMsg = dataMgr.hitMine();
+			hitEffectCanvas.addStr(hitMsg);
+			//
+			if (hitMsg.contains("+")) {
+				systemMsgAdapter.add(hitMsg);
+				systemMsgAdapter.notifyDataSetChanged();
+			}
+			//
+			if (!isShakeAnim) {
+				ivMineObj.startAnimation(shake);
+				isShakeAnim = true;
+			}
+		}
+	}
+
+	AnimationSet visibleAnimSet;
+	AlphaAnimation visibleAlphaAnim, invisibleAlphaAnim;
+	ScaleAnimation scaleAnim;
+
+	public void initAnim() {
+		visibleAlphaAnim = new AlphaAnimation(0.5f, 1.0f);
+		visibleAlphaAnim.setDuration(250);
+		visibleAlphaAnim.setFillAfter(false);
+//		scaleAnim = new ScaleAnimation(
+//						0.8f, // fromX (float)
+//						1.0f, // toX
+//						0.8f,  // fromY
+//						1.0f, // toY
+//						1.0f, 1.0f);
+
+		scaleAnim = new ScaleAnimation(0.5f, 1f, 0.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.65f);
+		scaleAnim.setDuration(150); // 표현시간
+
+
+		invisibleAlphaAnim = new AlphaAnimation(1.0f, 0.0f);
+		invisibleAlphaAnim.setStartOffset(250);
+		invisibleAlphaAnim.setDuration(250);
+
+		invisibleAlphaAnim.setFillAfter(false);
+
+		visibleAnimSet = new AnimationSet(true);
+		visibleAnimSet.setInterpolator(new AccelerateInterpolator());
+		visibleAnimSet.addAnimation(visibleAlphaAnim);
+		visibleAnimSet.addAnimation(scaleAnim);
+		visibleAnimSet.addAnimation(invisibleAlphaAnim);
+		visibleAnimSet.setFillAfter(true);
+	}
+
+
+
+
+	public void hitEffectStart() {
+		hitEffecFrame++;
+		ivHitEffect.startAnimation(visibleAnimSet);
+	}
+
+	int hitDelay = 90;
+
+	@Override
+	public void hit() {
+		hitEffectStart();
+
+		Item equipItem = dataMgr.getEquipItem();
+		if (equipItem != null) {
+			int equipDurability = equipItem.getDurability();
+			if (equipDurability > 0) {
+				equipDurability = equipItem.consumeDurability();
+				tvEquipItemDurability.setText(String.valueOf(equipDurability));
+			} else {
+				dataMgr.releaseEquipment();
+			}
+		}
+		Item lunchItem = dataMgr.getLunchItem();
+		if (lunchItem != null) {
+			int lunchDurability = lunchItem.getDurability();
+			if (lunchDurability > 0) {
+				lunchDurability = lunchItem.consumeDurability();
+				tvLunchItemDurability.setText(String.valueOf(lunchDurability));
+			} else {
+				dataMgr.removeLunch();
+			}
+		}
+	}
 
 	public void updateCombineInven() {
 		for (int i = 0; i < ivCombineInven.length; i++) {
@@ -284,6 +415,7 @@ public class ActMain extends Activity implements MainUpdate {
 		}
 	}
 
+	@Override
 	public void updateMatCount() {
 		for (int i = 0; i < ivMat.length; i++) {
 			ivMat[i].setVisibility(View.INVISIBLE);
@@ -370,34 +502,11 @@ public class ActMain extends Activity implements MainUpdate {
 	@Override
 	public void updateFindChanceMsg() {
 		Log.d("d", "updateFindChanceMsg");
-		String itemStat = "총 확률 : " + MathMgr.roundPer(dataMgr.getSumFindChance()) + "%";
+		String itemStat = "확률 : " + MathMgr.roundPer(dataMgr.getSumFindChance()) + "%";
 		float itemFindChance = dataMgr.getItemFindChance();
 		if (itemFindChance > 0)
-			itemStat += "\n(아이템:+" + MathMgr.roundPer(itemFindChance) + "%)";
+			itemStat += "(템:+" + MathMgr.roundPer(itemFindChance) + "%)";
 		tvItemStat.setText(itemStat);
 	}
 
-	@Override
-	public void hit() {
-		Item equipItem = dataMgr.getEquipItem();
-		if (equipItem != null) {
-			int equipDurability = equipItem.getDurability();
-			if (equipDurability > 0) {
-				equipDurability = equipItem.consumeDurability();
-				tvEquipItemDurability.setText(String.valueOf(equipDurability));
-			} else {
-				dataMgr.releaseEquipment();
-			}
-		}
-		Item lunchItem = dataMgr.getLunchItem();
-		if (lunchItem != null) {
-			int lunchDurability = lunchItem.getDurability();
-			if (lunchDurability > 0) {
-				lunchDurability = lunchItem.consumeDurability();
-				tvLunchItemDurability.setText(String.valueOf(lunchDurability));
-			} else {
-				dataMgr.removeLunch();
-			}
-		}
-	}
 }

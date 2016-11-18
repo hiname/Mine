@@ -143,21 +143,26 @@ public class ActInven extends Activity implements InvenUpdate {
 							} else {
 								Item getItem = myItemList.getItemByIdx(lastSelIdx);
 								if (getItem == null) return;
-								// int getItemId = getItem.getId();
+								//
 								String title = getItem.getName()
-										+ "\n" + getItem.getDurability() + "/" + getItem.getMaxDurability();
+										+ "\n내구력 : " + getItem.getDurability() + "/" + getItem.getMaxDurability();
 								tvDlgTitle.setText(title);
 								ivPopupIcon.setImageResource(getItem.getResId());
-								btnPopupSell.setText("판매");
-								btnPopupOpt.setVisibility(View.VISIBLE);
-								btnPopupOpt.setEnabled(true);
+								btnPopupSell.setText("판매(" + myItemList.getSellPrice(getItem.getId()) + "원)");
+								btnPopupOpt.setVisibility(View.GONE);
+								btnPopupOpt.setEnabled(false);
 								String type = getItem.getType();
 								String btnText = null;
 								if (type.equals(ItemInfo.TYPE_WEAPON)) {
 									btnText = "장착";
+									btnPopupOpt.setVisibility(View.VISIBLE);
+									btnPopupOpt.setEnabled(true);
 								} else if (type.equals(ItemInfo.TYPE_FOOD)) {
 									btnText = "먹기";
+									btnPopupOpt.setVisibility(View.VISIBLE);
+									btnPopupOpt.setEnabled(true);
 								}
+
 								if (getItem.getDurability() <= 0) {
 									btnText += "(망가짐)";
 									btnPopupOpt.setEnabled(false);

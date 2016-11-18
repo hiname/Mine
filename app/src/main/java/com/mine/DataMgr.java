@@ -56,7 +56,7 @@ public class DataMgr {
 	}
 
 	//
-	private final float[] mineFindChance = {0.7f, 0.3f, 0.5f};
+	private final float[] mineFindChance = {0.07f, 0.03f, 0.05f};
 	//
 	private float[] matAmount = new float[mineFindChance.length * 2];
 	private int locSelectCode = 0;
@@ -261,7 +261,10 @@ public class DataMgr {
 	}
 
 	public void addMatAmount(int idx, float add) {
-		matAmount[idx] += add;
+		if (add != 0) {
+			matAmount[idx] += add;
+			mainUpdate.updateMatCount();
+		}
 	}
 
 	public int getCombineInvenItemCount() {
