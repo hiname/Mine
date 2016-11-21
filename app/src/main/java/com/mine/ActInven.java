@@ -23,7 +23,7 @@ public class ActInven extends Activity implements InvenUpdate {
 	DataMgr dataMgr;
 	MyItemList myItemList = MyItemList.getInstance();
 	ItemInfo itemInfo = ItemInfo.getInstance();
-	static int invenSize = 9;
+	static final int INVEN_SIZE = 9;
 	Dialog dlg;
 	ImageView ivPopupIcon;
 	Button btnPopupSell, btnPopupOpt;
@@ -178,9 +178,10 @@ public class ActInven extends Activity implements InvenUpdate {
 		}
 	}
 
-	ArrayList<ImageView> ivItemList = new ArrayList<ImageView>();
+	private ArrayList<ImageView> ivItemList = new ArrayList<ImageView>();
 
 	private void initIvItemList() {
+		ivItemList.clear();
 		LinearLayout llInven = (LinearLayout) findViewById(R.id.llInven);
 		for (int i = 0; i < llInven.getChildCount(); i++) {
 			LinearLayout llChild = (LinearLayout) llInven.getChildAt(i);

@@ -35,6 +35,9 @@ public class MineInfo {
             R.drawable.gold,
             R.drawable.pig,
     };
+    
+    //
+	static final float[] mineFindChance = {0.07f, 0.03f, 0.05f};
 
     public class Mine {
         private int resId;

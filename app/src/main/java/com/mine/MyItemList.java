@@ -163,7 +163,7 @@ public class MyItemList {
 
 	public String tryAddItem(Item item) {
 		Log.d("d", "tryAddItem");
-		if (ActInven.invenSize <= myItemList.size()) {
+		if (ActInven.INVEN_SIZE <= myItemList.size()) {
 			return DataMgr.resultCode_myInvenFull;
 		} else if (item == null) {
 			return "└item is null ";

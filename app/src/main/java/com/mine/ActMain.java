@@ -2,9 +2,14 @@ package com.mine;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.os.Handler;
+import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -12,8 +17,8 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
 import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -35,14 +40,13 @@ public class ActMain extends Activity implements MainUpdate {
 	Button btnMix;
 	ImageView ivMineObj, ivMineWorker, ivHitEffect;
 	// boolean isMineHit = false;
-	int hitFrame, hitEffecFrame;
-	TextView tvItemStat, tvMyMoney;
-	int gatherIdx = 0;
+	int motionFrame, hitEffecFrame;
+	TextView tvFindChance, tvMyMoney;
 	Handler mainAnimHandler = new Handler();
 	DataMgr dataMgr;
 	MyItemList myItemList = MyItemList.getInstance();
-	ImageButton btnInvenOpen;
-	TextEffectCanvas hitEffectCanvas;
+	ImageView btnInvenOpen;
+	TextEffectCanvas hitMsgCanvas;
 	ArrayAdapter<String> systemMsgAdapter;
 	ImageView ivEquipItem, ivLunchItem;
 	TextView tvEquipItemDurability, tvLunchItemDurability;
@@ -55,7 +59,51 @@ public class ActMain extends Activity implements MainUpdate {
 		Log.d("d", "onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.act_main);
+
+		// - - - data ready - - -
+		dataMgr = DataMgr.getInstance(this);
+		dataMgr.loadData();
+		// - - - layout - - -
+		layoutHeader();
 		//
+		layoutMine();
+		initShakeAnim();
+		initHitEffectAnim();
+		//
+		layoutLocale();
+		//
+		layoutCombine();
+		//
+		layoutMaterial();
+		//
+
+		((LinearLayout) findViewById(R.id.llbg)).setBackgroundResource(MineInfo.locBgResId[dataMgr.getLocSelectCode()]);
+		//
+		// - - - ready update - - -
+		dataMgr.setMainUpdate(this);
+		myItemList.setMainUpdate(this);
+		dataMgr.useItem(dataMgr.getEquipItem());
+		dataMgr.useItem(dataMgr.getLunchItem());
+		//
+		// ivMineObj.setImageResource(MineInfo.locResId[dataMgr.getLocSelectCode()]);
+
+		ivLoc[dataMgr.getLocSelectCode()].callOnClick();
+
+		updateFindChanceMsg();
+		updateMyMoney();
+		updateCombineInven();
+		updateMatCount();
+		//
+		// start
+		String lastIdleSecTimeMsg = TOAST_TOKEN + "혼자일함 : " + dataMgr.getLastIdleSecTime() + "초";
+		addSystemMsg(lastIdleSecTimeMsg);
+		String lastIdleMineCountMsg = TOAST_TOKEN + "채집됨 => " + MineInfo.mineName[dataMgr.getLocSelectCode()] + ":" + dataMgr.getLastIdleMineCount() + "개";
+		addSystemMsg(lastIdleMineCountMsg);
+		mainAnimHandler.post(rnbHitMotion);
+
+	}
+
+	private void layoutHeader() {
 		ivEquipItem = (ImageView) findViewById(R.id.ivEquipItem);
 		ivEquipItem.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -76,22 +124,19 @@ public class ActMain extends Activity implements MainUpdate {
 		tvLunchItemDurability = (TextView) findViewById(R.id.tvLunchItemDurability);
 		tvLunchItemFindChance = (TextView) findViewById(R.id.tvLunchItemFindChance);
 		//
-		hitEffectCanvas = new TextEffectCanvas(this);
-		((FrameLayout) findViewById(R.id.rootFl)).addView(hitEffectCanvas);
-		btnInvenOpen = (ImageButton) findViewById(R.id.btnInvenOpen);
+		btnInvenOpen = (ImageView) findViewById(R.id.btnInvenOpen);
 		btnInvenOpen.setOnTouchListener(new View.OnTouchListener() {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				Log.d("d", "event.getAction() : " + event.getAction());
 				switch (event.getAction()) {
-					case MotionEvent.ACTION_DOWN :
+					case MotionEvent.ACTION_DOWN:
 						// btnInvenOpen.setBackgroundResource(R.drawable.btn_bg_down);
 						rectBtnRange = new Rect(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
 						break;
-
-					case MotionEvent.ACTION_UP :
+					case MotionEvent.ACTION_UP:
 						// btnInvenOpen.setBackgroundResource(R.drawable.btn_bg);
-						if(rectBtnRange.contains(v.getLeft() + (int) event.getX(), v.getTop() + (int) event.getY())){
+						if (rectBtnRange.contains(v.getLeft() + (int) event.getX(), v.getTop() + (int) event.getY())) {
 							Intent intent = new Intent(ActMain.this, ActInven.class);
 							startActivity(intent);
 						}
@@ -100,17 +145,26 @@ public class ActMain extends Activity implements MainUpdate {
 				return true;
 			}
 		});
+	}
 
+	private void layoutMine() {
 		ivMineObj = (ImageView) findViewById(R.id.ivMineObj);
+		//
 		ivMineWorker = (ImageView) findViewById(R.id.ivMineWorker);
 		ivHitEffect = (ImageView) findViewById(R.id.ivHitEffect);
+		hitMsgCanvas = new TextEffectCanvas(this);
+		((FrameLayout) findViewById(R.id.rootFl)).addView(hitMsgCanvas);
 		//
-		tvItemStat = (TextView) findViewById(R.id.tvItemStat);
-		tvMyMoney = (TextView) findViewById(R.id.tvMyMoney);
 		ListView lvSystemMsg = (ListView) findViewById(R.id.lvSystemMsg);
 		systemMsgAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.list_item);
 		lvSystemMsg.setAdapter(systemMsgAdapter);
 		//
+		tvFindChance = (TextView) findViewById(R.id.tvItemStat);
+		tvMyMoney = (TextView) findViewById(R.id.tvMyMoney);
+		//
+	}
+
+	private void layoutLocale() {
 		ivLoc = new ImageView[]{
 				(ImageView) findViewById(R.id.ivLoc1),
 				(ImageView) findViewById(R.id.ivLoc2),
@@ -123,12 +177,22 @@ public class ActMain extends Activity implements MainUpdate {
 				@Override
 				public void onClick(View v) {
 					dataMgr.setLocSelectCode(idx);
+					motionFrameResId = motionFrameResIdList[idx];
+					motionFrameLen = motionFrameResId.length;
+					motionLast = motionFrameLen - 1;
+					motionHit = motionFrameLen - motionHitFrameList[idx];
+					motionDelay = 1500 / motionFrameLen;
+					//
+					ivHitEffect.setImageResource(hitEffectList[idx]);
+					//
 					ivMineObj.setImageResource(MineInfo.locResId[idx]);
 					((LinearLayout) findViewById(R.id.llbg)).setBackgroundResource(MineInfo.locBgResId[idx]);
 				}
 			});
 		}
-		//
+	}
+
+	private void layoutCombine() {
 		ivCombineInven = new ImageView[]{
 				(ImageView) findViewById(R.id.ivCombine1),
 				(ImageView) findViewById(R.id.ivCombine2),
@@ -141,13 +205,23 @@ public class ActMain extends Activity implements MainUpdate {
 			ivCombineInven[i].setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					dataMgr.removeCombine(idx);
+					dataMgr.releaseCombine(idx);
 					updateCombineInven();
 					updateMatCount();
 				}
 			});
 		}
-		//
+		CheckBox cbFastMix = (CheckBox) findViewById(R.id.cbFastMix);
+		cbFastMix.setChecked(dataMgr.getFastMix());
+		cbFastMix.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				dataMgr.setFastMix(isChecked);
+			}
+		});
+	}
+
+	private void layoutMaterial() {
 		ivMat = new ImageView[]{
 				(ImageView) findViewById(R.id.ivMaterial1),
 				(ImageView) findViewById(R.id.ivMaterial2),
@@ -213,20 +287,12 @@ public class ActMain extends Activity implements MainUpdate {
 				updateMatCount();
 			}
 		});
-		//
-		dataMgr = DataMgr.getInstance(this);
-		dataMgr.loadData();
-		ivMineObj.setImageResource(MineInfo.locResId[dataMgr.getLocSelectCode()]);
-		((LinearLayout) findViewById(R.id.llbg)).setBackgroundResource(MineInfo.locBgResId[dataMgr.getLocSelectCode()]);
-		long lastIdleSecTime = dataMgr.getLastIdleSecTime();
-		long lastIdleMineCount = dataMgr.getLastIdleMineCount();
-		String lastIdleSecTimeMsg = "혼자일함 : " + lastIdleSecTime + "초";
-		String lastIdleMineCountMsg = "채집됨 => " + MineInfo.mineName[dataMgr.getLocSelectCode()] + ":" + lastIdleMineCount + "개";
-		Toast.makeText(this, lastIdleSecTimeMsg, Toast.LENGTH_LONG).show();
-		Toast.makeText(this, lastIdleMineCountMsg, Toast.LENGTH_LONG).show();
-		addSystemMsg(lastIdleSecTimeMsg);
-		addSystemMsg(lastIdleMineCountMsg);
-		shake = AnimationUtils.loadAnimation(ActMain.this, R.anim.shake);
+	}
+
+	private void initShakeAnim() {
+		// shake = AnimationUtils.loadAnimation(ActMain.this, R.anim.shake);
+		shake = new TranslateAnimation(0, -10, 0, 0);
+		shake.setDuration(200);
 		shake.setAnimationListener(new Animation.AnimationListener() {
 			@Override
 			public void onAnimationStart(Animation animation) {
@@ -241,89 +307,121 @@ public class ActMain extends Activity implements MainUpdate {
 			public void onAnimationRepeat(Animation animation) {
 			}
 		});
-		mainAnimHandler.post(mainAnimRnb);
-		dataMgr.setMainUpdate(this);
-		myItemList.setMainUpdate(this);
-		CheckBox cbFastMix = (CheckBox) findViewById(R.id.cbFastMix);
-		cbFastMix.setChecked(dataMgr.getFastMix());
-		cbFastMix.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				dataMgr.setFastMix(isChecked);
-			}
-		});
-		updateMyMoney();
-		updateCombineInven();
-		updateMatCount();
-		dataMgr.useItem(dataMgr.getEquipItem());
-		dataMgr.useItem(dataMgr.getLunchItem());
+	}
 
-		updateFindChanceMsg();
-		initAnim();
+	AnimationSet visibleAnimSet;
+	AlphaAnimation visibleAlphaAnim, invisibleAlphaAnim;
+	ScaleAnimation scaleAnim;
+
+	public void initHitEffectAnim() {
+		visibleAlphaAnim = new AlphaAnimation(0.5f, 1.0f);
+		visibleAlphaAnim.setDuration(200);
+		visibleAlphaAnim.setFillAfter(false);
+//		scaleAnim = new ScaleAnimation(
+//						0.8f, // fromX (float)
+//						1.0f, // toX
+//						0.8f,  // fromY
+//						1.0f, // toY
+//						1.0f, 1.0f);
+		scaleAnim = new ScaleAnimation(0.75f, 1f, 0.75f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.65f);
+		scaleAnim.setDuration(75); // 표현시간
+		//
+		invisibleAlphaAnim = new AlphaAnimation(1.0f, 0.0f);
+		invisibleAlphaAnim.setStartOffset(200);
+		invisibleAlphaAnim.setDuration(150);
+		invisibleAlphaAnim.setFillAfter(false);
+		//
+		visibleAnimSet = new AnimationSet(true);
+		visibleAnimSet.setInterpolator(new AccelerateInterpolator());
+		visibleAnimSet.addAnimation(visibleAlphaAnim);
+		visibleAnimSet.addAnimation(scaleAnim);
+		visibleAnimSet.addAnimation(invisibleAlphaAnim);
+		visibleAnimSet.setFillAfter(true);
 	}
 
 	boolean isShakeAnim = false;
-	Animation shake;
-//	int[] hitFrameResId = {
-//			R.drawable.mineworker01,
-//			// R.drawable.mineworker02,
-//			R.drawable.mineworker03,
-//			// R.drawable.mineworker04,
-//			R.drawable.mineworker05,
-//			// R.drawable.mineworker06,
-//			R.drawable.mineworker07,
-//			// R.drawable.mineworker08,
-//			R.drawable.mineworker09,
-//			// R.drawable.mineworker10,
-//			R.drawable.mineworker11,
-//			// R.drawable.mineworker12,
-//	};
+	TranslateAnimation shake;
+	int[] woodFrameResId = {
+			R.drawable.robot_knife01,
+			R.drawable.robot_knife02,
+			R.drawable.robot_knife03,
+			R.drawable.robot_knife04,
+			R.drawable.robot_knife05,
+			R.drawable.robot_knife06,
+			R.drawable.robot_knife07,
+			R.drawable.robot_knife08,
+			R.drawable.robot_knife09,
+			R.drawable.robot_knife10,
+			R.drawable.robot_knife11,
+			R.drawable.robot_knife12,
+			R.drawable.robot_knife13,
+			R.drawable.robot_knife14,
+			R.drawable.robot_knife15,
+			R.drawable.robot_knife16,
+			R.drawable.robot_knife17,
+			R.drawable.robot_knife18,
+			R.drawable.robot_knife19,
+			R.drawable.robot_knife20,
+			R.drawable.robot_knife21,
 
-	int[] hitFrameResId = {
-			R.drawable.mwb0,
-			R.drawable.mwb1,
-			R.drawable.mwb2,
-			R.drawable.mwb3,
-			R.drawable.mwb4,
-			R.drawable.mwb5,
-			R.drawable.mwb6,
-			R.drawable.mwb7,
-			R.drawable.mwb8,
-			R.drawable.mwb9,
-			R.drawable.mwb10,
-			R.drawable.mwb11,
-			R.drawable.mwb12,
-			R.drawable.mwb13,
-			R.drawable.mwb14,
-			R.drawable.mwb15,
-			R.drawable.mwb16,
-			R.drawable.mwb17,
+	};
+	int[] stoneFrameResId = {
+			R.drawable.mineworker01,
+			// R.drawable.mineworker02,
+			R.drawable.mineworker03,
+			// R.drawable.mineworker04,
+			R.drawable.mineworker05,
+			// R.drawable.mineworker06,
+			R.drawable.mineworker07,
+			// R.drawable.mineworker08,
+			R.drawable.mineworker09,
+			// R.drawable.mineworker10,
+			R.drawable.mineworker11,
+			// R.drawable.mineworker12,
+	};
+	int[] butcherFrameResId = {
+			R.drawable.amazoness01,
+			R.drawable.amazoness02,
+			R.drawable.amazoness03,
+			R.drawable.amazoness04,
+			R.drawable.amazoness05,
+			R.drawable.amazoness06,
+			R.drawable.amazoness07,
+	};
+	int[][] motionFrameResIdList = {
+			woodFrameResId,
+			stoneFrameResId,
+			butcherFrameResId,
+	};
+	int[] motionHitFrameList = {
+			11,
+			2,
+			5,
+	};
+	//
+	int[] motionFrameResId;
+	int motionFrameLen, motionLast, motionHit;
 
-
+	int[] hitEffectList = {
+			R.drawable.hit_effect,
+			R.drawable.hit_effect,
+			R.drawable.hit_effect,
 	};
 
 
-	int hitFrameLen = hitFrameResId.length;
-	Runnable mainAnimRnb = new Runnable() {
+	Runnable rnbHitMotion = new Runnable() {
 		@Override
 		public void run() {
-			attackFrame();
-
+			motionNext();
 			//
-			mainAnimHandler.postDelayed(this, hitDelay);
+			mainAnimHandler.postDelayed(this, motionDelay);
 		}
 	};
 
-	public void attackFrame() {
-		hitFrame++;
-		int frameResId = hitFrameResId[hitFrame];
-		if (hitFrame < (hitFrameLen - 1)) {
-			ivMineWorker.setImageResource(frameResId);
-		} else {
-			ivMineWorker.setImageResource(frameResId);
-			hitFrame = 0;
+	public void motionNext() {
+		if (motionFrame == motionHit) {
 			String hitMsg = dataMgr.hitMine();
-			hitEffectCanvas.addStr(hitMsg);
+			hitMsgCanvas.addStr(hitMsg);
 			//
 			if (hitMsg.contains("+")) {
 				systemMsgAdapter.add(hitMsg);
@@ -335,55 +433,18 @@ public class ActMain extends Activity implements MainUpdate {
 				isShakeAnim = true;
 			}
 		}
+		//
+		if (motionFrame >= motionLast) motionFrame = 0;
+		//
+		ivMineWorker.setImageResource(motionFrameResId[motionFrame]);
+		motionFrame++;
 	}
 
-	AnimationSet visibleAnimSet;
-	AlphaAnimation visibleAlphaAnim, invisibleAlphaAnim;
-	ScaleAnimation scaleAnim;
-
-	public void initAnim() {
-		visibleAlphaAnim = new AlphaAnimation(0.5f, 1.0f);
-		visibleAlphaAnim.setDuration(250);
-		visibleAlphaAnim.setFillAfter(false);
-//		scaleAnim = new ScaleAnimation(
-//						0.8f, // fromX (float)
-//						1.0f, // toX
-//						0.8f,  // fromY
-//						1.0f, // toY
-//						1.0f, 1.0f);
-
-		scaleAnim = new ScaleAnimation(0.5f, 1f, 0.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.65f);
-		scaleAnim.setDuration(150); // 표현시간
-
-
-		invisibleAlphaAnim = new AlphaAnimation(1.0f, 0.0f);
-		invisibleAlphaAnim.setStartOffset(250);
-		invisibleAlphaAnim.setDuration(250);
-
-		invisibleAlphaAnim.setFillAfter(false);
-
-		visibleAnimSet = new AnimationSet(true);
-		visibleAnimSet.setInterpolator(new AccelerateInterpolator());
-		visibleAnimSet.addAnimation(visibleAlphaAnim);
-		visibleAnimSet.addAnimation(scaleAnim);
-		visibleAnimSet.addAnimation(invisibleAlphaAnim);
-		visibleAnimSet.setFillAfter(true);
-	}
-
-
-
-
-	public void hitEffectStart() {
-		hitEffecFrame++;
-		ivHitEffect.startAnimation(visibleAnimSet);
-	}
-
-	int hitDelay = 90;
+	int motionDelay = 90;
 
 	@Override
 	public void hit() {
-		hitEffectStart();
-
+		ivHitEffect.startAnimation(visibleAnimSet);
 		Item equipItem = dataMgr.getEquipItem();
 		if (equipItem != null) {
 			int equipDurability = equipItem.getDurability();
@@ -449,8 +510,10 @@ public class ActMain extends Activity implements MainUpdate {
 	protected void onDestroy() {
 		Log.d("d", "onDestroy");
 		super.onDestroy();
-		dataMgr.saveData();
-		mainAnimHandler.removeCallbacks(mainAnimRnb);
+		if (dataMgr != null) dataMgr.saveData();
+		//
+		if (mainAnimHandler != null && rnbHitMotion != null)
+			mainAnimHandler.removeCallbacks(rnbHitMotion);
 	}
 
 	@Override
@@ -506,7 +569,6 @@ public class ActMain extends Activity implements MainUpdate {
 		float itemFindChance = dataMgr.getItemFindChance();
 		if (itemFindChance > 0)
 			itemStat += "(템:+" + MathMgr.roundPer(itemFindChance) + "%)";
-		tvItemStat.setText(itemStat);
+		tvFindChance.setText(itemStat);
 	}
-
 }

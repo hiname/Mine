@@ -41,7 +41,7 @@ public class Item implements Cloneable{
 	public void setId(int id) {
 		this.id = id;
 	}
-
+	
 	public int getId() {
 		return id;
 	}

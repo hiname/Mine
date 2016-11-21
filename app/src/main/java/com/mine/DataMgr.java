@@ -11,29 +11,8 @@ import java.util.Collections;
  * Created by USER on 2016-11-09.
  */
 public class DataMgr {
-	private static SharedPreferences spf;
-	static final String saveFileName = "pref";
-	//
-	private final String destoryTimeKey = "destoryTimeKey";
-	private final String matAmountDataKey = "matAmountDataKey";
-	private final String locSelectCodeKey = "locSelectCodeKey";
-	private final String combinePackKey = "combinePackKey";
-	private final String myModifyPackKey = "myModifyPackKey";
-	private final String myMoneyKey = "myMoneyKey";
-	private final String fastSellKey = "fastSellKey";
-	private final String fastMixKey = "fastMixKey";
-	private final String equipItemKey = "equipItemKey";
-	private final String lunchItemKey = "lunchItemKey";
-	private final String myItemLastIdxKey = "myItemLastIdxKey";
-	//
-	static final String resultCode_formulaNotFound = "resultCode_formulaNotFound";
-	static final String resultCode_myInvenFull = "resultCode_myInvenFull";
-	static final String resultCode_myItemAddOK = "resultCode_myItemAddOK";
-
-	//
-	//
-	private DataMgr() {
-	}
+	
+	private DataMgr() {	}
 
 	private static class Singleton {
 		private static final DataMgr instance = new DataMgr();
@@ -43,58 +22,40 @@ public class DataMgr {
 		spf = context.getSharedPreferences(saveFileName, Context.MODE_PRIVATE);
 		return Singleton.instance;
 	}
-
-	//
-	MainUpdate mainUpdate;
-
-	public void setMainUpdate(MainUpdate du) {
-		mainUpdate = du;
-	}
-
-	public void updateSystemMsg(String msg) {
-		if (mainUpdate != null) mainUpdate.addSystemMsg(msg);
-	}
-
-	//
-	private final float[] mineFindChance = {0.07f, 0.03f, 0.05f};
-	//
-	private float[] matAmount = new float[mineFindChance.length * 2];
+	
+	private final String mixFormula[][] = {
+			{"0,0,0,0,0", "0"}, // wood
+			{"1,1,1,1,1", "1"}, // stone
+			{"2,2,2,2,2", "2"}, // chicken
+			{"0,0,0,0,1", "3"}, // stick
+			{"0,0,0,1,1", "4"}, // hammer
+			{"0,0,1,1,1", "5"}, // maul
+			{"0,1,1,1,1", "6"}, // mace
+			{"0,0,0,1,2", "7"}, // spear
+			{"0,0,1,1,2", "8"}, // morningstar
+	};
+	
+	private float[] matAmount = new float[MineInfo.mineFindChance.length * 2];
 	private int locSelectCode = 0;
 	//
-	private ArrayList<Integer> combineInvenItemList = new ArrayList<Integer>();
-	private int combineInvenSize = 5;
-	//
-	private long lastIdleSecTime;
-	private int lastIdleMineCount;
-	//
-	private boolean isFastSell = false;
-	private boolean isFastMix = false;
-	//
-	// private long myMoney;
 	private MyItemList myItemList = MyItemList.getInstance();
-	// private MyItemList myItemList = new MyItemList();
 	private ItemInfo itemInfo = ItemInfo.getInstance();
 	//
 	private int penaltyFactor = 10;
-
-	public void setFastSell(boolean isFastSell) {
-		this.isFastSell = isFastSell;
+	
+	private void setIdle() {
+		long nowMillis = System.currentTimeMillis();
+		long destroyMillis = spf.getLong(destoryTimeKey, nowMillis);
+		lastIdleSecond = (nowMillis - destroyMillis) / 1000;
+		lastIdleMineCount = 0;
+		int idleLoopCnt = (int) (lastIdleSecond / penaltyFactor);
+		for (int i = 0; i < idleLoopCnt; i++) {
+			if (Math.random() < sumFindChance) lastIdleMineCount++;
+		}
+		matAmount[locSelectCode] += lastIdleMineCount;
 	}
 
-	public void setFastMix(boolean isFastMix) {
-		this.isFastMix = isFastMix;
-	}
-
-	public boolean getFastSell() {
-		return isFastSell;
-	}
-
-	public boolean getFastMix() {
-		return isFastMix;
-	}
-
-	private Item equipItem;
-	private Item lunchItem;
+	private Item equipItem, lunchItem;
 
 	public Item getEquipItem() {
 		return equipItem;
@@ -158,54 +119,6 @@ public class DataMgr {
 		updateFindChance();
 	}
 
-	private final String mixFormula[][] = {
-			{"0,0,0,0,0", "0"}, // wood
-			{"1,1,1,1,1", "1"}, // stone
-			{"2,2,2,2,2", "2"}, // chicken
-			{"0,0,0,0,1", "3"}, // stick
-			{"0,0,0,1,1", "4"}, // hammer
-			{"0,0,1,1,1", "5"}, // maul
-			{"0,1,1,1,1", "6"}, // mace
-			{"0,0,0,1,2", "7"}, // spear
-			{"0,0,1,1,2", "8"}, // morningstar
-	};
-
-	public String tryMixGetItemName() {
-		String resultItemName = resultCode_formulaNotFound;
-		String tmpMixTable = "";
-		Collections.sort(combineInvenItemList);
-		//
-		for (int i = 0; i < combineInvenItemList.size(); i++) {
-			tmpMixTable += combineInvenItemList.get(i) + ",";
-		}
-		if (tmpMixTable.length() > 0)
-			tmpMixTable = tmpMixTable.substring(0, tmpMixTable.length() - 1);
-		//
-		for (int i = 0; i < mixFormula.length; i++) {
-			// 조합식 발견
-			if (tmpMixTable.equals(mixFormula[i][0])) {
-				Item mixItem = itemInfo.getItem(Integer.parseInt(mixFormula[i][1]));
-				resultItemName = myItemList.tryAddItem(mixItem);
-				if (resultItemName.equals(resultCode_myItemAddOK)) {
-					resultItemName = itemInfo.getName(i);
-					combineInvenItemList.clear();
-					break;
-				}
-			}
-		}
-		//
-		Log.d("d", "mixTable : " + tmpMixTable);
-		return resultItemName;
-	}
-
-	public int getLastIdleMineCount() {
-		return lastIdleMineCount;
-	}
-
-	public long getLastIdleSecTime() {
-		return lastIdleSecTime;
-	}
-
 	public String hitMine() {
 		String msg = "hit!";
 		double chkRnd = Math.random();
@@ -240,14 +153,15 @@ public class DataMgr {
 
 	private void updateFindChance() {
 		Log.d("d", "updateFindChance");
-		float mineStandChance = mineFindChance[locSelectCode];
+		float mineStandChance = MineInfo.mineFindChance[locSelectCode];
 		//
 		float equipFindChance = equipItem == null ? 0 : equipItem.getFindChance();
 		float lunchFindChance = lunchItem == null ? 0 : lunchItem.getFindChance();
 		itemFindChance = equipFindChance + lunchFindChance;
 		//
 		sumFindChance = mineStandChance + itemFindChance;
-		sumFindChance = MathMgr.roundAndDecimal(sumFindChance);
+		// sumFindChance = MathMgr.roundAndDecimal(sumFindChance);
+		//
 		if (mainUpdate != null) mainUpdate.updateFindChanceMsg();
 	}
 
@@ -260,31 +174,9 @@ public class DataMgr {
 		return locSelectCode;
 	}
 
-	public void addMatAmount(int idx, float add) {
-		if (add != 0) {
-			matAmount[idx] += add;
-			mainUpdate.updateMatCount();
-		}
-	}
-
-	public int getCombineInvenItemCount() {
-		return combineInvenItemList.size();
-	}
-
-	public int getCombineInvenItem(int idx) {
-		if (idx < 0 || combineInvenItemList.size() <= 0)
-			return -1;
-		return combineInvenItemList.get(idx);
-	}
-
-	public float getMatAmount(int idx) {
-		return matAmount[idx];
-	}
-
-	public String loadString(String name, String def) {
-		return spf.getString(locSelectCodeKey, def);
-	}
-
+	private ArrayList<Integer> combineInvenItemList = new ArrayList<Integer>();
+	private int combineInvenSize = 5;
+	
 	public String addCombine(int itemId) {
 		int combineItemCount = combineInvenItemList.size();
 		if (combineItemCount >= combineInvenSize) {
@@ -298,19 +190,133 @@ public class DataMgr {
 		return "add";
 	}
 
-	public String removeCombine(int idx) {
-		int combineItemCount = combineInvenItemList.size();
-		if (combineItemCount <= 0) {
-			return "아이템 없음";
+	public String tryMixGetItemName() {
+		String resultItemName = DataMgr.resultCode_formulaNotFound;
+		String tmpMixTable = "";
+		Collections.sort(combineInvenItemList);
+		//
+		for (int i = 0; i < combineInvenItemList.size(); i++) {
+			tmpMixTable += combineInvenItemList.get(i) + ",";
 		}
-		if (combineItemCount <= idx) {
-			return "범위를 벗어남";
+		if (tmpMixTable.length() > 0)
+			tmpMixTable = tmpMixTable.substring(0, tmpMixTable.length() - 1);
+		//
+		for (int i = 0; i < mixFormula.length; i++) {
+			// 조합식 발견
+			if (tmpMixTable.equals(mixFormula[i][0])) {
+				Item mixItem = itemInfo.getItem(Integer.parseInt(mixFormula[i][1]));
+				resultItemName = myItemList.tryAddItem(mixItem);
+				if (resultItemName.equals(DataMgr.resultCode_myItemAddOK)) {
+					resultItemName = itemInfo.getName(i);
+					combineInvenItemList.clear();
+					break;
+				}
+			}
 		}
-		int removeItem = combineInvenItemList.remove(idx);
-		matAmount[removeItem]++;
-		return "remove";
+		//
+		Log.d("d", "mixTable : " + tmpMixTable);
+		return resultItemName;
+	}
+	
+	public int getCombineInvenItemCount() {
+		return combineInvenItemList.size();
 	}
 
+	public int getCombineInvenItem(int idx) {
+		if (idx < 0 || combineInvenItemList.size() <= 0)
+			return -1;
+		return combineInvenItemList.get(idx);
+	}
+
+	public void addMatAmount(int idx, float add) {
+		if (add != 0) {
+			matAmount[idx] += add;
+			mainUpdate.updateMatCount();
+		}
+	}
+	
+	public float getMatAmount(int idx) {
+		return matAmount[idx];
+	}
+
+	public String loadString(String name, String def) {
+		return spf.getString(locSelectCodeKey, def);
+	}
+
+	public void releaseCombine(int idx) {
+		int combineItemCount = combineInvenItemList.size();
+		if (combineItemCount <= 0) {
+			updateSystemMsg(ActMain.TOAST_TOKEN + "아이템 없음");
+			return;
+		} else if (combineItemCount <= idx) {
+			updateSystemMsg(ActMain.TOAST_TOKEN + "잘못된 입력");
+		} else {
+			int removeItemId = combineInvenItemList.remove(idx);
+			matAmount[removeItemId]++;		
+		}
+	}
+
+	private boolean isFastSell = false;
+	private boolean isFastMix = false;
+	
+	public void setFastSell(boolean isFastSell) {
+		this.isFastSell = isFastSell;
+	}
+
+	public void setFastMix(boolean isFastMix) {
+		this.isFastMix = isFastMix;
+	}
+
+	public boolean getFastSell() {
+		return isFastSell;
+	}
+
+	public boolean getFastMix() {
+		return isFastMix;
+	}
+	
+	//
+	private MainUpdate mainUpdate;
+
+	public void setMainUpdate(MainUpdate du) {
+		mainUpdate = du;
+	}
+	
+	public void updateSystemMsg(String msg) {
+		if (mainUpdate != null) mainUpdate.addSystemMsg(msg);
+	}
+	//
+	
+	private static SharedPreferences spf;
+	static final String saveFileName = "pref";
+	//
+	private final String destoryTimeKey = "destoryTimeKey";
+	private final String matAmountDataKey = "matAmountDataKey";
+	private final String locSelectCodeKey = "locSelectCodeKey";
+	private final String combinePackKey = "combinePackKey";
+	private final String myModifyPackKey = "myModifyPackKey";
+	private final String myMoneyKey = "myMoneyKey";
+	private final String fastSellKey = "fastSellKey";
+	private final String fastMixKey = "fastMixKey";
+	private final String equipItemKey = "equipItemKey";
+	private final String lunchItemKey = "lunchItemKey";
+	private final String myItemLastIdxKey = "myItemLastIdxKey";
+	//
+	static final String resultCode_formulaNotFound = "resultCode_formulaNotFound";
+	static final String resultCode_myInvenFull = "resultCode_myInvenFull";
+	static final String resultCode_myItemAddOK = "resultCode_myItemAddOK";
+	
+	private long lastIdleSecond;
+	private int lastIdleMineCount;
+	
+	public int getLastIdleMineCount() {
+		return lastIdleMineCount;
+	}
+
+	public long getLastIdleSecTime() {
+		return lastIdleSecond;
+	}
+	
 	public void saveData() {
 		Log.d("d", "save");
 		SharedPreferences.Editor editor = spf.edit();
@@ -395,11 +401,7 @@ public class DataMgr {
 			}
 		}
 		// idle time
-		long nowMillis = System.currentTimeMillis();
-		long destroyMillis = spf.getLong(destoryTimeKey, nowMillis);
-		lastIdleSecTime = (nowMillis - destroyMillis) / 1000;
-		lastIdleMineCount = (int) (sumFindChance * (lastIdleSecTime / penaltyFactor));
-		matAmount[locSelectCode] += lastIdleMineCount;
+		setIdle();
 		// myItem
 		String myModifyPack = spf.getString(myModifyPackKey, null);
 		myItemList.clear();

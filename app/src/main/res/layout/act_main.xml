@@ -114,7 +114,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0.4">
 
-                    <ImageButton
+                    <ImageView
                         android:id="@+id/btnInvenOpen"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -143,7 +143,7 @@
                             android:id="@+id/ivMineObj"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:layout_gravity="left"
+                            android:layout_gravity="center"
                             android:layout_weight="1"
                             android:paddingRight="40dp"
                             android:src="@drawable/loc_wood"/>
@@ -152,23 +152,19 @@
                             android:id="@+id/ivMineWorker"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:layout_gravity="right"
+                            android:layout_gravity="center"
+                            android:paddingLeft="40dp"
                             android:layout_weight="1"
                             android:src="@drawable/mineworker01"/>
-
                         <!--
                             android:paddingRight="10dp"
                             android:paddingTop="44dp"
                         -->
-
                         <ImageView
                             android:id="@+id/ivHitEffect"
-                            android:layout_width="100dp"
-                            android:layout_height="100dp"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
                             android:layout_gravity="center|bottom"
-                            android:layout_weight="1"
-                            android:paddingRight="10dp"
-                            android:paddingTop="44dp"
                             android:src="@drawable/hit_effect"
                             android:visibility="invisible"/>
                     </FrameLayout>
